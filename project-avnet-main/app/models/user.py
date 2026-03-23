@@ -35,5 +35,12 @@ class User(Base):
         lazy="selectin",
     )
 
+    mador_access_levels = relationship(
+        "MadorMemberAccess",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
 
 

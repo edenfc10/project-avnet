@@ -25,3 +25,12 @@ class MeetingRepository(BaseRepository):
 
     def get_meetings_by_mador(self, mador_id) -> list[Meeting]:
         return self.session.query(Meeting).filter_by(mador_id=mador_id).all()
+
+    def delete_meeting_by_db_id(self, meeting_db_id: int) -> bool:
+        meeting = self.get_meeting_by_id(meeting_db_id)
+        if not meeting:
+            return False
+
+        self.session.delete(meeting)
+        self.session.commit()
+        return True

@@ -34,8 +34,26 @@ class Mador(Base):
         lazy="selectin",
     )
 
+    member_access_levels = relationship(
+        "MadorMemberAccess",
+        back_populates="mador",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
     meetings = relationship(
         "Meeting",
         back_populates="mador",
         lazy="selectin",
     )
+
+
+class MadorMemberAccess(Base):
+    __tablename__ = "MadorMemberAccess"
+
+    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("Users.UUID"), primary_key=True)
+    mador_id = Column(PostgresUUID(as_uuid=True), ForeignKey("Madors.UUID"), primary_key=True)
+    access_level = Column(String(20), nullable=False, default="standard")
+
+    user = relationship("User", back_populates="mador_access_levels", lazy="selectin")
+    mador = relationship("Mador", back_populates="member_access_levels", lazy="selectin")

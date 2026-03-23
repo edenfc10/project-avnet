@@ -1,93 +1,141 @@
 # Project Avnet
 
-Project Avnet is a meetings management platform with:
+Project Avnet is a meetings management system built with:
 
-1. React + Vite frontend (`Meetings-App`)
-2. FastAPI + SQLAlchemy backend (`project-avnet-main`)
-3. PostgreSQL database (Docker)
+1. Frontend: React + Vite (`Meetings-App`)
+2. Backend: FastAPI + SQLAlchemy (`project-avnet-main`)
+3. Database: PostgreSQL (Docker)
 
-The app supports role-based access (`super_admin`, `admin`, `agent`), mador-based ownership, meeting linking in SQL, and CMS detail retrieval on demand.
+The platform is role-based and supports `super_admin`, `admin`, and `agent` workflows for users, groups (madors), meetings, and access-level enforcement.
 
-## Overview
+## Key Features
 
-### Frontend
+1. JWT login with role validation via `/protected/me`
+2. Group (mador) management with membership and per-member access level
+3. Meeting linking in SQL + CMS mock metadata enrichment
+4. User creation and deletion with role guards
+5. Group deletion for `super_admin` and `admin`
+6. Agent visibility limited to assigned groups and allowed resource types
 
-1. Authentication with token + `/protected/me` role verification
-2. Meetings pages: Audio, Video, Blastdial
-3. Users page with role-aware creation and filtering
-4. Mador management and member assignment
-5. Meeting actions:
-   - Add meeting (persists to DB)
-   - Open meeting (fetches details from CMS mock)
-   - Delete meeting (role-based)
-   - Update password in CMS mock (role-based)
+## Architecture
 
-### Backend
+### Frontend (`Meetings-App`)
 
-1. JWT auth and role validation middleware
-2. User CRUD endpoints (with role guards)
-3. Mador endpoints and membership management
-4. Meeting endpoints under mador routes
-5. Startup initialization:
-   - Create tables
-   - Ensure super admin exists
+1. Login and role-aware navigation
+2. Meetings pages:
+   - Audio Meetings
+   - Video Meetings
+   - Blastdial Meetings
+3. Groups page:
+   - Create group (`super_admin` only)
+   - Manage members (`super_admin`/`admin`)
+   - Delete group (`super_admin`/`admin` only)
+4. Users page:
+   - Create user (`super_admin` creates admin/agent, `admin` creates agent)
+   - Delete user (`super_admin`/`admin` with restrictions)
+   - `super_admin` hidden from `admin` and `agent` users list
 
-## Current Meeting Data Flow
+### Backend (`project-avnet-main`)
 
-1. Meetings list pages load meeting links from database (`madors -> meetings`)
-2. Add meeting writes to database first (`meeting_id`, `mador_id`, `mador_owner_id`)
-3. After add, frontend fetches CMS data by `meeting_id` to enrich display
-4. Open button fetches latest CMS details on demand
-5. CMS includes metadata like `name`, `status`, `password`, participants, node
+1. Token role validators (`TokenValidator`)
+2. Routers:
+   - `auth`
+   - `user`
+   - `mador`
+   - `protect`
+3. Service layer for business rules
+4. Repository layer for DB operations
+5. Startup DB init + super admin bootstrap
 
-Note: SQL stores minimal link data, while detailed meeting metadata comes from CMS mock.
-
-## Role Permissions
+## Current Permission Rules
 
 ### super_admin
 
-1. Can create admins and agents
-2. Can delete any meeting
-3. Can view and update any meeting password
-4. Full access across madors
+1. Can create admin and agent users
+2. Can delete users (except self-delete is blocked)
+3. Can create and delete groups
+4. Can manage group members and access levels
+5. Can create/delete meetings and update meeting passwords
+6. Can view all users and all groups
 
 ### admin
 
-1. Can create agents
-2. Can delete only meetings they own (mador ownership)
-3. Can update password for owned/mapped meetings
-4. Access limited by mador ownership/membership logic
+1. Can create agent users
+2. Can delete users, but:
+   - cannot delete `super_admin`
+   - cannot delete self
+3. Can delete groups
+4. Can manage group members and access levels
+5. Can create/delete meetings and update meeting passwords
+6. Does not see `super_admin` in users list
 
 ### agent
 
 1. Cannot create users
-2. Cannot delete meetings
-3. Cannot update meeting passwords
-4. Can access permitted views based on assigned madors
+2. Cannot delete users
+3. Cannot delete groups
+4. Cannot manage group members
+5. Cannot delete meetings
+6. Cannot update meeting passwords
+7. Can only access resources assigned to their groups based on access level
 
-## Tech Stack
+## Agent Access-Level Enforcement
 
-### Backend
+Access level is stored per user per group (`member_access_levels`) and supports:
 
-1. Python 3.11
-2. FastAPI
-3. SQLAlchemy
-4. PostgreSQL
-5. Passlib/JWT auth helpers
+1. `audio`
+2. `video`
+3. `blast_dial`
+4. Legacy compatibility values: `full`, `standard`, `restricted`
 
-### Frontend
+Behavior:
 
-1. React
-2. Vite
-3. React Router
-4. Axios
+1. Agent sees only groups assigned to them (backend enforced)
+2. Agent sees only meetings in assigned groups
+3. Agent resource visibility is filtered by access level:
+   - `audio` -> audio resources only
+   - `video` -> video resources only
+   - `blast_dial` -> blastdial resources only
+   - `full` / `standard` -> allowed (legacy compatibility)
+   - `restricted` -> blocked
 
-### Infrastructure
+## Meetings Data Flow
 
-1. Docker Compose
-2. PostgreSQL service (`db`)
-3. API service (`api`)
-4. Frontend service (`frontend`)
+1. Meeting is created in SQL under a specific group
+2. Frontend creates/reads CMS mock metadata by `meetingId`
+3. UI is enriched with CMS fields (`name`, `status`, `password`, `participants`, etc.)
+4. If legacy meeting is missing in CMS mock, the UI can backfill it
+
+## API (Current)
+
+### Auth
+
+1. `POST /auth/login`
+2. `POST /auth/signup` (if enabled by current flow)
+
+### Protected
+
+1. `GET /protected/me`
+
+### Users
+
+1. `GET /users/all`
+2. `GET /users/{s_id}`
+3. `POST /users/create-agent`
+4. `POST /users/create-admin`
+5. `DELETE /users/{user_id}`
+
+### Madors (Groups)
+
+1. `POST /madors/`
+2. `GET /madors/`
+3. `DELETE /madors/{mador_id}`
+4. `POST /madors/{mador_id}/members/{user_id}`
+5. `DELETE /madors/{mador_id}/members/{user_id}`
+6. `PUT /madors/{mador_id}/members/{user_id}/access-level`
+7. `POST /madors/{mador_id}/meetings`
+8. `GET /madors/{mador_id}/meetings`
+9. `DELETE /madors/meetings/{meeting_db_id}`
 
 ## Project Structure
 
@@ -108,6 +156,7 @@ project-avnet-main/
 │   │   │   ├── AudioMeetings.jsx
 │   │   │   ├── VideoMeetings.jsx
 │   │   │   ├── BlastdialMeetings.jsx
+│   │   │   ├── Groups.jsx
 │   │   │   ├── Users.jsx
 │   │   │   └── ...
 │   │   └── services/
@@ -129,7 +178,7 @@ project-avnet-main/
 
 ## Environment Variables
 
-Create `.env` at the repository root:
+Create `.env` in repository root:
 
 ```env
 POSTGRES_USER=postgres
@@ -146,55 +195,27 @@ SUPER_ADMIN_PASSWORD=superadminpassword
 RESET_DB=
 ```
 
-Optional:
+Notes:
 
-1. Set `RESET_DB=1` to force full schema reset on startup
-2. Keep empty for normal startup
+1. `.env` is local configuration and should not be committed
+2. Set `RESET_DB=1` only when you intentionally want reset behavior
 
-## Run With Docker
+## Run with Docker
 
 ```bash
-docker-compose down -v
-docker-compose up --build
+docker compose down -v
+docker compose up -d --build
 ```
 
 Services:
 
 1. Frontend: http://localhost:5173
 2. API: http://localhost:8000
-3. API docs: http://localhost:8000/docs
-
-## API Reference (Current)
-
-### Auth
-
-1. `POST /auth/login`
-2. `POST /auth/signup` (if enabled by current role flow)
-
-### Protected
-
-1. `GET /protected/me`
-
-### Users
-
-1. `GET /users/all`
-2. `GET /users/{s_id}`
-3. `POST /users/create-agent`
-4. `POST /users/create-admin`
-5. `DELETE /users/{user_id}`
-
-### Madors
-
-1. `POST /madors/`
-2. `GET /madors/`
-3. `POST /madors/{mador_id}/members/{user_id}`
-4. `DELETE /madors/{mador_id}/members/{user_id}`
-5. `POST /madors/{mador_id}/meetings`
-6. `GET /madors/{mador_id}/meetings`
+3. Swagger: http://localhost:8000/docs
 
 ## Frontend Routes
 
-1. `/` Login
+1. `/` login
 2. `/dashboard`
 3. `/audio-meetings`
 4. `/video-meetings`
@@ -206,46 +227,25 @@ Services:
 10. `/help`
 11. `/settings`
 
-## Notes
+## Troubleshooting
 
-1. The CMS layer is currently mocked in `Meetings-App/src/mocks/cmsMeetings.js`
-2. Frontend verifies role from backend response, not only token storage
-3. Meeting details are intentionally split:
-   - SQL for linkage and ownership
-   - CMS for dynamic meeting metadata
+### Docker issues
 
-## 🐛 Troubleshooting
+1. Rebuild: `docker compose up -d --build`
+2. View logs: `docker compose logs`
+3. Clean state: `docker compose down -v`
 
-### Database Issues
-- If tables don't exist, restart the API service to trigger auto-creation
-- Check PostgreSQL logs for connection issues
+### Backend/API issues
 
-### Frontend Issues
-- Ensure backend is running on port 8000
-- Check browser console for CORS errors
-- Verify `VITE_API_URL` environment variable
+1. Verify API container is running
+2. Check `/docs` for endpoint availability
+3. Validate JWT and role in `/protected/me`
 
-### Docker Issues
-- Use `docker compose down` to stop services
-- Use `docker compose up --build` to rebuild images
-- Check container logs with `docker compose logs`
+### Frontend issues
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and commit: `git commit -am 'Add feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📞 Support
-
-For questions or support, please contact the development team or create an issue in the GitHub repository.
+1. Ensure `VITE_API_URL` points to backend (default: `http://localhost:8000`)
+2. Open browser console for network/CORS errors
 
 ---
 
-**Note**: This project automatically creates database tables on startup and initializes a super admin user for testing purposes.
+This README reflects the current role and access-control behavior implemented in the repository.

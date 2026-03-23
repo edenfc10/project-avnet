@@ -109,6 +109,51 @@ export async function getMockCmsMeetingById(meetingId) {
   );
 }
 
+export async function createMockCmsMeeting(meetingData) {
+  await wait(300);
+
+  const meetingId = String(meetingData?.meetingId || "").trim();
+  if (!meetingId) {
+    return null;
+  }
+
+  const existing = CMS_MEETINGS.find((meeting) => meeting.meetingId === meetingId);
+  if (existing) {
+    return existing;
+  }
+
+  const type = meetingData?.type || "audio";
+  const passwordPrefix =
+    type === "video" ? "VIDEO" : type === "blast_dial" ? "BLAST" : "AUDIO";
+
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const password = `${passwordPrefix}-${randomSuffix}`;
+
+  const nextNumericId = CMS_MEETINGS.reduce((max, meeting) => {
+    const parsed = Number(String(meeting.id || "").replace("cms-", ""));
+    return Number.isFinite(parsed) ? Math.max(max, parsed) : max;
+  }, 3000) + 1;
+
+  const created = {
+    id: `cms-${nextNumericId}`,
+    meetingId,
+    name: meetingData?.name || `Meeting ${meetingId}`,
+    type,
+    group: meetingData?.group || "Unassigned",
+    accessLevel: type,
+    status: "idle",
+    participantsCount: 0,
+    duration: 0,
+    lastUsedAt: new Date().toISOString(),
+    password,
+    passwordMasked: "******",
+    cmsNode: meetingData?.cmsNode || "CMS-LOCAL-1",
+  };
+
+  CMS_MEETINGS.unshift(created);
+  return created;
+}
+
 export async function updateMockCmsMeetingPassword(meetingId, newPassword) {
   await wait(300);
 

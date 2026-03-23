@@ -33,7 +33,7 @@ import helpIcon from "./assets/icons/help.svg";
 // Main Layout Component
 function MainLayout() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, userRole, currentUser } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -48,9 +48,17 @@ function MainLayout() {
           <img src={appLogo} alt="App Logo" className="app-logo" />
           <div className="header-title">Meet Manager</div>
         </div>
-        <button className="profile-button" onClick={handleLogout} title="Sign out">
-          Sign out
-        </button>
+        <div className="header-actions">
+          <div className="header-user-panel" title={`Connected as ${userRole || "unknown"}`}>
+            <span className="header-user-name">{currentUser?.username || "User"}</span>
+            <span className={`header-role-badge role-${userRole || "agent"}`}>
+              {userRole || "unknown"}
+            </span>
+          </div>
+          <button className="profile-button" onClick={handleLogout} title="Sign out">
+            Sign out
+          </button>
+        </div>
       </header>
 
       {/* Sidebar */}

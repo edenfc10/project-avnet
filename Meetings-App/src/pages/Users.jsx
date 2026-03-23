@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { userAPI } from "../services/api";
 
 export default function Users() {
-  const { userRole } = useAuth();
+  const { userRole, currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState("");
@@ -20,8 +20,12 @@ export default function Users() {
   const [submitting, setSubmitting] = useState(false);
   const [createError, setCreateError] = useState("");
   const [createSuccess, setCreateSuccess] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState("");
+  const [deleteLoadingSid, setDeleteLoadingSid] = useState("");
 
   const canCreateUsers = userRole === "super_admin" || userRole === "admin";
+  const canDeleteUsers = userRole === "super_admin" || userRole === "admin";
 
   const roleOptions = useMemo(() => {
     if (userRole === "super_admin") {
@@ -36,7 +40,12 @@ export default function Users() {
   const visibleUsers = useMemo(() => {
     const query = searchText.trim().toLowerCase();
 
-    return users.filter((user) => {
+    const usersForRole =
+      userRole === "super_admin"
+        ? users
+        : users.filter((user) => user.role !== "super_admin");
+
+    return usersForRole.filter((user) => {
       const matchRole = roleFilter === "all" || user.role === roleFilter;
       if (!matchRole) {
         return false;
@@ -50,7 +59,7 @@ export default function Users() {
       const byUsername = (user.username || "").toLowerCase().includes(query);
       return bySid || byUsername;
     });
-  }, [users, searchText, roleFilter]);
+  }, [users, searchText, roleFilter, userRole]);
 
   const fetchUsers = async () => {
     try {
@@ -125,6 +134,58 @@ export default function Users() {
     }
   };
 
+  const canDeleteTarget = (targetUser) => {
+    if (!canDeleteUsers || !targetUser) {
+      return false;
+    }
+
+    if ((targetUser.s_id || "") === (currentUser?.s_id || "")) {
+      return false;
+    }
+
+    if (userRole === "admin" && targetUser.role === "super_admin") {
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleDeleteUser = async (targetUser) => {
+    if (!canDeleteTarget(targetUser)) {
+      setDeleteError("You are not allowed to delete this user.");
+      return;
+    }
+
+    try {
+      setDeleteLoadingSid(targetUser.s_id);
+      setDeleteError("");
+      setDeleteSuccess("");
+
+      await userAPI.deleteUser(targetUser.s_id);
+      setDeleteSuccess(`User ${targetUser.username} deleted successfully.`);
+      await fetchUsers();
+    } catch (err) {
+      setDeleteError(err.response?.data?.detail || "Failed to delete user.");
+    } finally {
+      setDeleteLoadingSid("");
+    }
+  };
+
+  useEffect(() => {
+    if (!createError && !createSuccess && !deleteError && !deleteSuccess) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCreateError("");
+      setCreateSuccess("");
+      setDeleteError("");
+      setDeleteSuccess("");
+    }, 3500);
+
+    return () => clearTimeout(timer);
+  }, [createError, createSuccess, deleteError, deleteSuccess]);
+
   return (
     <div className="page">
       <h2 className="page-header">Users</h2>
@@ -182,10 +243,14 @@ export default function Users() {
 
           {createError ? <div className="error-banner">{createError}</div> : null}
           {createSuccess ? <div className="success-banner">{createSuccess}</div> : null}
+          {deleteError ? <div className="error-banner">{deleteError}</div> : null}
+          {deleteSuccess ? <div className="success-banner">{deleteSuccess}</div> : null}
         </div>
       ) : (
         <div className="card">
           <div className="empty-state">Agents cannot create users.</div>
+          {deleteError ? <div className="error-banner">{deleteError}</div> : null}
+          {deleteSuccess ? <div className="success-banner">{deleteSuccess}</div> : null}
         </div>
       )}
 
@@ -207,7 +272,7 @@ export default function Users() {
             onChange={(e) => setRoleFilter(e.target.value)}
           >
             <option value="all">All Roles</option>
-            <option value="super_admin">super_admin</option>
+            {userRole === "super_admin" ? <option value="super_admin">super_admin</option> : null}
             <option value="admin">admin</option>
             <option value="agent">agent</option>
           </select>
@@ -234,6 +299,23 @@ export default function Users() {
                   </div>
                   <div className="meeting-meta">S_ID: {user.s_id}</div>
                 </div>
+                {canDeleteUsers ? (
+                  <div className="meeting-actions">
+                    <button
+                      className="btn-danger"
+                      type="button"
+                      onClick={() => handleDeleteUser(user)}
+                      disabled={!canDeleteTarget(user) || deleteLoadingSid === user.s_id}
+                      title={
+                        canDeleteTarget(user)
+                          ? "Delete user"
+                          : "You are not allowed to delete this user"
+                      }
+                    >
+                      {deleteLoadingSid === user.s_id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ))
           )}

@@ -15,7 +15,7 @@ validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent"])
 @userRouter.get("/all", status_code=200, response_model=list[UserOutput])
 def get_all_users(session: Session = Depends(get_db), user = Depends(validator)):
     try:
-        return UserService(session=session).get_all_users()
+        return UserService(session=session).get_all_users(current_user_role=user.role.value)
     except Exception as error:
         print(error)
         raise error
@@ -47,10 +47,14 @@ def create_admin_user(user_data: UserInCreateNoRole, session: Session = Depends(
     
     
 
-@userRouter.delete("/{user_id}", status_code=200, response_model=BoolOutput, dependencies=[Depends(allow_super_admin_only)])
-def delete_user(user_id: str, session: Session = Depends(get_db)):
+@userRouter.delete("/{user_id}", status_code=200, response_model=BoolOutput, dependencies=[Depends(allow_admins_only)])
+def delete_user(user_id: str, session: Session = Depends(get_db), user = Depends(allow_admins_only)):
     try:
-        success = UserService(session=session).delete_user(user_id=user_id)
+        success = UserService(session=session).delete_user(
+            user_id=user_id,
+            current_user_role=user.role.value,
+            current_user_s_id=user.s_id,
+        )
         return BoolOutput(success=success)
     except Exception as error:
         print(error)

@@ -2,6 +2,7 @@ import axios from 'axios';
 import {
   getMockCmsMeetings,
   getMockCmsMeetingById,
+  createMockCmsMeeting,
   updateMockCmsMeetingPassword,
   deleteMockCmsMeeting,
 } from '../mocks/cmsMeetings';
@@ -43,10 +44,14 @@ export const userAPI = {
 export const madorAPI = {
   createMador: (madorData) => api.post('/madors/', madorData),
   listMadors: () => api.get('/madors/'),
+  deleteMador: (madorId) => api.delete(`/madors/${madorId}`),
   addMember: (madorId, userId) => api.post(`/madors/${madorId}/members/${userId}`),
   removeMember: (madorId, userId) => api.delete(`/madors/${madorId}/members/${userId}`),
+  updateMemberAccessLevel: (madorId, userId, accessLevel) =>
+    api.put(`/madors/${madorId}/members/${userId}/access-level`, { access_level: accessLevel }),
   createMeeting: (madorId, meetingData) => api.post(`/madors/${madorId}/meetings`, meetingData),
   getMeetings: (madorId) => api.get(`/madors/${madorId}/meetings`),
+  deleteMeetingByDbId: (meetingDbId) => api.delete(`/madors/meetings/${meetingDbId}`),
 };
 
 // CMS API (mock for frontend integration)
@@ -57,6 +62,10 @@ export const cmsAPI = {
   },
   getMeetingById: async (meetingId) => {
     const meeting = await getMockCmsMeetingById(meetingId);
+    return { data: meeting };
+  },
+  createMeeting: async (meetingData) => {
+    const meeting = await createMockCmsMeeting(meetingData);
     return { data: meeting };
   },
   updateMeetingPassword: async (meetingId, newPassword) => {

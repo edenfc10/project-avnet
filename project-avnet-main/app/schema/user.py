@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from uuid import UUID
@@ -30,6 +30,18 @@ class UserMinimalOutput(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class MadorMemberAccessOutput(BaseModel):
+    user_id: UUID
+    mador_id: UUID
+    access_level: str
+
+    model_config = {"from_attributes": True}
+
+
+class MadorMemberAccessUpdate(BaseModel):
+    access_level: Literal["audio", "video", "blast_dial", "restricted", "standard", "full"]
+
+
 class MadorBase(BaseModel):
     name: str
 
@@ -38,7 +50,8 @@ class MadorOutput(MadorBase):
     id: UUID = Field(validation_alias="UUID")
     creator_id: UUID
     creator: UserMinimalOutput
-    members: List["UserOutput"] = []
+    members: List[UserMinimalOutput] = []
+    member_access_levels: List[MadorMemberAccessOutput] = []
     meetings: List[MeetingOutput] = []
 
     model_config = {"from_attributes": True}

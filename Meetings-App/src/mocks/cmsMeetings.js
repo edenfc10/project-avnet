@@ -1,0 +1,155 @@
+let CMS_MEETINGS = [
+  {
+    id: "cms-1001",
+    meetingId: "891245",
+    name: "Command Audio Bridge",
+    type: "audio",
+    group: "Operations",
+    accessLevel: "audio",
+    status: "active",
+    participantsCount: 12,
+    duration: 34,
+    lastUsedAt: "2026-03-22T08:40:00Z",
+    password: "AUDIO-7781",
+    passwordMasked: "******",
+    cmsNode: "CMS-DC-1",
+  },
+  {
+    id: "cms-1002",
+    meetingId: "891246",
+    name: "Daily Ops Audio",
+    type: "audio",
+    group: "NOC",
+    accessLevel: "audio",
+    status: "idle",
+    participantsCount: 0,
+    duration: 0,
+    lastUsedAt: "2026-03-21T16:20:00Z",
+    password: "AUDIO-3394",
+    passwordMasked: "******",
+    cmsNode: "CMS-DC-2",
+  },
+  {
+    id: "cms-2001",
+    meetingId: "771110",
+    name: "Leadership Video Room",
+    type: "video",
+    group: "Management",
+    accessLevel: "video",
+    status: "active",
+    participantsCount: 7,
+    duration: 52,
+    lastUsedAt: "2026-03-22T09:05:00Z",
+    password: "VIDEO-2288",
+    passwordMasked: "******",
+    cmsNode: "CMS-DC-1",
+  },
+  {
+    id: "cms-2002",
+    meetingId: "771111",
+    name: "Training Video Hall",
+    type: "video",
+    group: "HR",
+    accessLevel: "video",
+    status: "scheduled",
+    participantsCount: 0,
+    duration: 0,
+    lastUsedAt: "2026-03-20T12:35:00Z",
+    password: "VIDEO-9915",
+    passwordMasked: "******",
+    cmsNode: "CMS-DC-3",
+  },
+  {
+    id: "cms-3001",
+    meetingId: "551900",
+    name: "Mass Notification Dialout",
+    type: "blast_dial",
+    group: "Emergency",
+    accessLevel: "blast_dial",
+    status: "active",
+    participantsCount: 24,
+    duration: 9,
+    lastUsedAt: "2026-03-22T07:55:00Z",
+    password: "BLAST-1044",
+    passwordMasked: "******",
+    cmsNode: "CMS-DC-2",
+  },
+  {
+    id: "cms-3002",
+    meetingId: "551901",
+    name: "Legacy Blast Group",
+    type: "blast_dial",
+    group: "NOT IN USE",
+    accessLevel: "blast_dial",
+    status: "not_in_use",
+    participantsCount: 0,
+    duration: 0,
+    lastUsedAt: "2026-03-01T05:10:00Z",
+    password: "BLAST-0000",
+    passwordMasked: "******",
+    cmsNode: "CMS-DC-3",
+    
+  },
+];
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function getMockCmsMeetings(type) {
+  await wait(300);
+  if (!type) {
+    return CMS_MEETINGS;
+  }
+  return CMS_MEETINGS.filter((meeting) => meeting.type === type);
+}
+
+export async function getMockCmsMeetingById(meetingId) {
+  await wait(300);
+  return (
+    CMS_MEETINGS.find((meeting) => meeting.meetingId === meetingId) || null
+  );
+}
+
+export async function updateMockCmsMeetingPassword(meetingId, newPassword) {
+  await wait(300);
+
+  const meeting = CMS_MEETINGS.find((item) => item.meetingId === meetingId);
+  if (!meeting) {
+    return null;
+  }
+
+  meeting.password = newPassword;
+  meeting.passwordMasked = newPassword ? "******" : "-";
+  meeting.lastUsedAt = new Date().toISOString();
+
+  return meeting;
+}
+
+export async function deleteMockCmsMeeting(meetingId, actor = null) {
+  await wait(300);
+
+  const index = CMS_MEETINGS.findIndex((item) => item.meetingId === meetingId);
+  if (index === -1) {
+    return { deleted: false, reason: "not_found" };
+  }
+
+  const meeting = CMS_MEETINGS[index];
+  const role = actor?.role || "";
+
+  if (role !== "super_admin" && role !== "admin") {
+    return { deleted: false, reason: "forbidden" };
+  }
+
+  if (role === "admin") {
+    const ownedGroups = (actor?.ownedGroups || []).map((name) =>
+      (name || "").toLowerCase().trim()
+    );
+    const meetingGroup = (meeting.group || "").toLowerCase().trim();
+
+    if (!ownedGroups.includes(meetingGroup)) {
+      return { deleted: false, reason: "forbidden" };
+    }
+  }
+
+  CMS_MEETINGS.splice(index, 1);
+  return { deleted: true, reason: "ok" };
+}

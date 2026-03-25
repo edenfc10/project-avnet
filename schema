@@ -1,0 +1,23 @@
+users:
+- id
+- username
+- password
+- role <- super_admin, admin, agent
+- groups
+
+groups:
+- id
+- name
+- member <- user id
+- access_level <- [audio, video, blast_dial]
+
+sessions:
+- id
+- user_id
+- session_token
+
+# user super admin can create admin and agent users, assign them to groups, and manage their access levels.
+# user admin can create agent users, assign them to groups, and manage their access levels.
+# user agent can only access the resources assigned to their groups based on their access levels (read only)
+
+

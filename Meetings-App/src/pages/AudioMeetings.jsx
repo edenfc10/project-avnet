@@ -42,6 +42,7 @@ export default function AudioMeetings() {
                     dbId: meetingRef.UUID,
                     meetingId: String(meetingRef.m_number || ""),
                     accessLevel: meetingRef.accessLevel || "",
+                    password: meetingRef.password || "",
                     group: mador.name || "Unassigned",
                     status: "",
                   };
@@ -60,6 +61,7 @@ export default function AudioMeetings() {
                     dbId: meeting.UUID,
                     meetingId: String(meeting.m_number || ""),
                     accessLevel: meeting.accessLevel || "",
+                    password: meeting.password || "",
                     group: mador.name || "Unassigned",
                     status: "",
                   };

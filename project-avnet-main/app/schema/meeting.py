@@ -36,6 +36,7 @@ class MeetingInCreate(BaseModel):
 class MeetingInUpdate(BaseModel):
     m_number: Optional[str] = None           # מספר פגישה חדש (אופציונלי)
     accessLevel: Optional[MeetingRole] = None  # סוג חדש (אופציונלי)
+    password: Optional[str] = None           # סיסמה חדשה (אופציונלי)
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
@@ -46,6 +47,7 @@ class MeetingOutput(BaseModel):
     UUID: UUID                                                   # מזהה הפגישה
     m_number: str                                                # מספר הפגישה
     accessLevel: MeetingRole                                     # סוג הפגישה
+    password: Optional[str] = None                               # סיסמת הוועידה (אם קיימת)
     madors: Optional[List[UUID]] = Field(default_factory=list)   # רשימת המדורים שהפגישה שייכת אליהם
    
 

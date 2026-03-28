@@ -38,10 +38,10 @@ export default function Users() {
 
   const roleOptions = useMemo(() => {
     if (userRole === "super_admin") {
-      return ["admin", "agent"];
+      return ["admin", "agent", "viewer"];
     }
     if (userRole === "admin") {
-      return ["agent"];
+      return ["agent", "viewer"];
     }
     return [];
   }, [userRole]);
@@ -124,6 +124,8 @@ export default function Users() {
 
       if (formData.role === "admin") {
         await userAPI.createAdmin(payload);
+      } else if (formData.role === "viewer") {
+        await userAPI.createViewer(payload);
       } else {
         await userAPI.createAgent(payload);
       }
@@ -284,6 +286,7 @@ export default function Users() {
             {userRole === "super_admin" ? <option value="super_admin">super_admin</option> : null}
             <option value="admin">admin</option>
             <option value="agent">agent</option>
+            <option value="viewer">viewer</option>
           </select>
 
           <button className="btn-secondary" type="button" onClick={fetchUsers}>

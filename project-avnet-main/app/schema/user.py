@@ -26,6 +26,7 @@ class UserRole(str, Enum):
     super_admin = "super_admin"
     admin = "admin"
     agent = "agent"
+    viewer = "viewer"
 
     model_config = ConfigDict(use_enum_values=True)  # שומר את הערך הטקסטואלי ולא את האובייקט
 

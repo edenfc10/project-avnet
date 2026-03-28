@@ -6,7 +6,7 @@
 //   - יצירת מדור חדש (super_admin בלבד)
 //   - מחיקת מדור (admin/super_admin)
 //   - לחיצה כפולה על מדור פותחת מודל ניהול חברים:
-//     - הוספת חבר (agent) עם בחירת access_level
+//     - הוספת חבר (agent/viewer) עם בחירת access_level
 //     - הסרת חבר
 //     - צפייה ברמת הגישה של כל חבר
 // ============================================================================
@@ -39,6 +39,7 @@ export default function Madors() {
   const isSuperAdmin = userRole === "super_admin";
   const isAdmin = userRole === "admin";
   const canManage = isSuperAdmin || isAdmin;
+  const canViewMembers = canManage || userRole === "viewer";
 
   const getGroupId = (group) => String(group?.UUID || group?.id || "");
 
@@ -56,7 +57,7 @@ export default function Madors() {
     return {
       UUID: memberUUID,
       username: memberUUID ? memberUUID.slice(0, 8) : "Unknown",
-      role: "agent",
+      role: "member",
       s_id: "",
     };
   };
@@ -96,12 +97,12 @@ export default function Madors() {
   }, []);
 
   useEffect(() => {
-    if (canManage) {
+    if (canManage || userRole === "viewer") {
       userAPI.getAllUsers()
         .then((res) => setAllUsers(res.data || []))
         .catch(() => {});
     }
-  }, [canManage]);
+  }, [canManage, userRole]);
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
@@ -134,8 +135,7 @@ export default function Madors() {
   };
 
   const handleGroupDoubleClick = (group) => {
-    const canManageThis = canManage;
-    if (!canManageThis) return;
+    if (!canViewMembers) return;
     setSelectedGroup(normalizeGroup(group));
     setModalError("");
     setAddUserId("");
@@ -210,9 +210,9 @@ export default function Madors() {
     }
   };
 
-  const availableAgents = allUsers.filter(
+  const availableMembers = allUsers.filter(
     (u) =>
-      u.role === "agent" &&
+      ["agent", "viewer"].includes(u.role) &&
       !selectedGroup?.members?.some((m) => String(m.UUID) === String(u.UUID))
   );
 
@@ -267,8 +267,10 @@ export default function Madors() {
       <div className="card fill">
         <h3 className="card-title">All Madors ({groups.length})</h3>
 
-        {canManage && (
-          <p className="info-hint">Double-click a group to manage its members.</p>
+        {canViewMembers && (
+          <p className="info-hint">
+            {canManage ? "Double-click a group to manage its members." : "Double-click a group to view its members."}
+          </p>
         )}
 
         {loading ? <div className="empty-state">Loading madors...</div> : null}
@@ -281,12 +283,13 @@ export default function Madors() {
             ) : (
               groups.map((group) => {
                 const canManageThis = canManage;
+                const canOpenGroup = canViewMembers;
                 return (
                   <div
                     key={getGroupId(group)}
-                    className={`meeting-row${canManageThis ? " group-clickable" : ""}`}
+                    className={`meeting-row${canOpenGroup ? " group-clickable" : ""}`}
                     onDoubleClick={() => handleGroupDoubleClick(group)}
-                    title={canManageThis ? "Double-click to manage members" : ""}
+                    title={canOpenGroup ? (canManageThis ? "Double-click to manage members" : "Double-click to view members") : ""}
                   >
                     <div>
                       <div className="meeting-title">{group.name}</div>
@@ -381,45 +384,49 @@ export default function Madors() {
               </div>
             )}
 
-            <h4 style={{ margin: "0 0 8px 0", fontSize: 14, color: "var(--text-700)" }}>
-              Add Agent
-            </h4>
-            {availableAgents.length === 0 ? (
-              <div className="empty-state">No available agents to add.</div>
-            ) : (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <select
-                  className="search-input"
-                  value={addUserId}
-                  onChange={(e) => setAddUserId(e.target.value)}
-                  style={{ flex: 1 }}
-                >
-                  <option value="">Select an agent...</option>
-                  {availableAgents.map((u) => (
-                    <option key={u.UUID} value={u.UUID}>
-                      {u.username} ({u.s_id})
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="search-input"
-                  value={addAccessLevel}
-                  onChange={(e) => setAddAccessLevel(e.target.value)}
-                  style={{ width: 150 }}
-                >
-                  <option value="audio">Audio</option>
-                  <option value="video">Video</option>
-                  <option value="blast_dial">Blast Dial</option>
-                </select>
-                <button
-                  className="search-button"
-                  onClick={handleAddMember}
-                  disabled={modalLoading || !addUserId}
-                >
-                  {modalLoading ? "..." : "Add"}
-                </button>
-              </div>
-            )}
+            {canManage ? (
+              <>
+                <h4 style={{ margin: "0 0 8px 0", fontSize: 14, color: "var(--text-700)" }}>
+                  Add Member
+                </h4>
+                {availableMembers.length === 0 ? (
+                  <div className="empty-state">No available agents or viewers to add.</div>
+                ) : (
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <select
+                      className="search-input"
+                      value={addUserId}
+                      onChange={(e) => setAddUserId(e.target.value)}
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">Select an agent or viewer...</option>
+                      {availableMembers.map((u) => (
+                        <option key={u.UUID} value={u.UUID}>
+                          {u.username} ({u.s_id}) - {u.role}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="search-input"
+                      value={addAccessLevel}
+                      onChange={(e) => setAddAccessLevel(e.target.value)}
+                      style={{ width: 150 }}
+                    >
+                      <option value="audio">Audio</option>
+                      <option value="video">Video</option>
+                      <option value="blast_dial">Blast Dial</option>
+                    </select>
+                    <button
+                      className="search-button"
+                      onClick={handleAddMember}
+                      disabled={modalLoading || !addUserId}
+                    >
+                      {modalLoading ? "..." : "Add"}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : null}
           </div>
         </div>
       )}

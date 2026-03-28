@@ -12,6 +12,7 @@
 
 import os
 import time
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from app.core.database import Base, _engine
 # ייבוא כל המודלים - חייב כדי שיהיו רשומים ב-Base.metadata לפני create_all
@@ -37,6 +38,10 @@ def create_tables(retries=5, delay=3):
     for i in range(retries):
         try:
             Base.metadata.create_all(bind=_engine)
+            # Lightweight compatibility migration for existing environments.
+            with _engine.connect() as conn:
+                conn.execute(text("ALTER TABLE meetings ADD COLUMN IF NOT EXISTS password VARCHAR(120)"))
+                conn.commit()
             print("Tables created successfully")
             break
         except OperationalError:

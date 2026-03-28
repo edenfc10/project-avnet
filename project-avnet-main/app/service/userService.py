@@ -60,12 +60,15 @@ class UserService:
         """ עוזר - מחזיר את הערך הטקסטואלי של תפקיד (בין אם זה Enum או string) """
         return getattr(role, "value", role)
     
-    def get_all_users(self, current_user_role: str) -> list[UserOutput]:
+    def get_all_users(self, current_user_role: str, current_user_uuid: str | None = None) -> list[UserOutput]:
         """
         מחזיר את כל המשתמשים.
         אם המשתמש הנוכחי לא super_admin - מסתיר סופרים מהרשימה.
         """
-        users = self.__userRepository.get_all_users()
+        if current_user_role == "viewer" and current_user_uuid:
+            users = self.__userRepository.get_users_in_same_madors(user_uuid=current_user_uuid)
+        else:
+            users = self.__userRepository.get_all_users()
         if current_user_role != "super_admin":
             users = [
                 user
@@ -80,6 +83,21 @@ class UserService:
         if user:
             return user
         raise HTTPException(status_code = 400 , detail = "User is not available")
+
+    def get_user_by_s_id_for_requester(self, s_id: str, requester_role: str, requester_uuid: str) -> User:
+        """
+        מחזיר משתמש לפי s_id, עם הגבלת viewer:
+        viewer יכול לצפות רק במשתמשים שחולקים איתו מדור.
+        """
+        user = self.get_user_by_s_id(s_id=s_id)
+
+        if requester_role == "viewer":
+            group_users = self.__userRepository.get_users_in_same_madors(user_uuid=requester_uuid)
+            allowed_ids = {str(u.UUID) for u in group_users}
+            if str(user.UUID) not in allowed_ids:
+                raise HTTPException(status_code=403, detail="Viewer can only access users in the same group")
+
+        return user
     
     def delete_user(self, user_id: str, current_user_role: str, current_user_s_id: str) -> bool:
         """
@@ -118,6 +136,14 @@ class UserService:
         user_data.password = hashed_password
         user = self.__userRepository.create_admin_user(user_data=user_data)
         user = UserOutput(UUID=user.UUID,s_id=user.s_id,username=user.username, role=user.role, madors=[m.UUID for m in user.madors] )
+        return user
+
+    def create_viewer_user(self, user_data: UserInCreateNoRole) -> UserOutput:
+        """ יוצר משתמש סוג viewer - הסיסמה מוצפנת לפני שמירה """
+        hashed_password = HashHelp.get_password_hash(plain_password=user_data.password)
+        user_data.password = hashed_password
+        user = self.__userRepository.create_viewer_user(user_data=user_data)
+        user = UserOutput(UUID=user.UUID, s_id=user.s_id, username=user.username, role=user.role, madors=[m.UUID for m in user.madors])
         return user
     
     def get_mador_meetings_by_user_uuid(self, user_uuid: str, mador_uuid: str) -> list[str]:

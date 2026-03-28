@@ -35,7 +35,7 @@ const PAGE_SIZE = 5;
 
 export default function MeetingsPage({ title, data, loading = false, error = "" }) {
   const { userRole, currentUser } = useAuth();
-  const canManageMeetings = userRole === "super_admin" || userRole === "admin"; // רק admin/super_admin יכולים ליצור/למחוק
+  const canManageMeetings = userRole === "super_admin"; // רק super_admin יכול ליצור/למחוק
   const [query, setQuery] = useState("");           // טקסט חיפוש שהמשתמש מקליד
   const [submittedQuery, setSubmittedQuery] = useState(""); // טקסט חיפוש שנשלח (אחרי Enter/לחיצה)
   const [searchBy, setSearchBy] = useState("meetingId");
@@ -147,8 +147,8 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
       return meetingsWithCmsDetails;
     }
 
-    if (userRole === "agent") {
-      // For agents, backend endpoints already enforce mador membership + access-level rules.
+    if (userRole === "agent" || userRole === "viewer") {
+      // For member roles, backend endpoints already enforce mador membership + access-level rules.
       // Avoid client-side over-filtering based on partial auth payload.
       return meetingsWithCmsDetails;
     }
@@ -224,7 +224,20 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
       return true;
     }
 
+    if (userRole === "viewer") {
+      return true;
+    }
+
     return false;
+  };
+
+  const canSeeParticipants = (meeting) => {
+    return true;
+  };
+
+  const getParticipantsText = (meeting) => {
+    const count = meeting?.participantsCount ?? 0;
+    return canSeeParticipants(meeting) ? count : "Restricted";
   };
 
   const getPasswordText = (meeting) => {
@@ -277,6 +290,8 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
   const mergeMeetingWithCms = (meeting, cmsMeeting) => ({
     ...meeting,
     ...cmsMeeting,
+    // DB remains source of truth for password so it is shared between users.
+    password: meeting.password || cmsMeeting?.password || "",
     id: meeting.id,
     dbId: meeting.dbId,
     isLocal: meeting.isLocal,
@@ -362,6 +377,11 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     e.preventDefault();
     setCreateError("");
     setCreateSuccess("");
+
+    if (!canManageMeetings) {
+      setCreateError("Only super_admin can create meetings.");
+      return;
+    }
 
     const meetingIdText = newMeeting.meetingId.trim();
     if (!meetingIdText) {
@@ -578,13 +598,18 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
 
     try {
       setPasswordUpdating(true);
-      const response = await cmsAPI.updateMeetingPassword(selectedMeeting.meetingId, trimmed);
-      const updated = response.data;
-
-      if (!updated) {
-        setPasswordError("Meeting was not found in CMS.");
+      if (!selectedMeeting.dbId) {
+        setPasswordError("Meeting is not linked to database.");
         return;
       }
+
+      const response = await meetingAPI.updateMeeting(selectedMeeting.dbId, { password: trimmed });
+      const updatedDb = response.data;
+      const updated = {
+        ...selectedMeeting,
+        password: updatedDb?.password || trimmed,
+        lastUsedAt: new Date().toISOString(),
+      };
 
       setSelectedMeeting((prev) => ({
         ...prev,
@@ -603,10 +628,17 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
         );
       }
 
+      // Best effort: keep mock CMS in sync for local UI enrichments.
+      try {
+        await cmsAPI.updateMeetingPassword(selectedMeeting.meetingId, trimmed);
+      } catch {
+        // Ignore CMS sync errors when DB update already succeeded.
+      }
+
       setPasswordInput("");
-      setPasswordSuccess("Password updated in CMS.");
+      setPasswordSuccess("Password updated successfully.");
     } catch (err) {
-      setPasswordError(err.response?.data?.detail || "Failed to update password in CMS.");
+      setPasswordError(err.response?.data?.detail || "Failed to update password.");
     } finally {
       setPasswordUpdating(false);
     }
@@ -785,7 +817,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
                     </div>
                     <div className="meeting-name">{m.name || "Unnamed meeting"}</div>
                     <div className="meeting-meta">
-                      {m.group} • Participants: {m.participantsCount ?? 0} • Last used: {displayLastUsed(m.lastUsedAt)}
+                      {m.group} • Participants: {getParticipantsText(m)} • Last used: {displayLastUsed(m.lastUsedAt)}
                     </div>
                   </div>
                   <div className="meeting-actions">
@@ -861,7 +893,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
               ) : null}
               <p><strong>Group:</strong> {selectedMeeting.group}</p>
               <p><strong>Access Level:</strong> {selectedMeeting.accessLevel || "-"}</p>
-              <p><strong>Participants:</strong> {selectedMeeting.participantsCount ?? 0}</p>
+              <p><strong>Participants:</strong> {getParticipantsText(selectedMeeting)}</p>
               <p><strong>Last Used:</strong> {displayLastUsed(selectedMeeting.lastUsedAt)}</p>
               <p><strong>Duration:</strong> {displayDuration(selectedMeeting.duration)}</p>
               <p><strong>Password:</strong> {getPasswordText(selectedMeeting)}</p>

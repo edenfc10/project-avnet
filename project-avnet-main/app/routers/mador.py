@@ -28,7 +28,7 @@ madorRouter = APIRouter()
 # הגדרת רמות הרשאה
 allow_super_admin_only = TokenValidator(allowed_roles=["super_admin"])
 allow_admins_only = TokenValidator(allowed_roles=["admin", "super_admin"])
-validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent"])
+validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent", "viewer"])
 
 
 # --- POST /madors/create ---
@@ -39,7 +39,7 @@ def create_mador(mador_data: MadorInCreate, session: Session = Depends(get_db)):
 @madorRouter.get("/all", status_code=200, response_model=list[MadorOutput])
 def get_all_madors(session: Session = Depends(get_db), user = Depends(validator)):
     user_role = getattr(user.role, "value", user.role)
-    if user_role == "agent":
+    if user_role in ("agent", "viewer"):
         return MadorService(session=session).get_madors_by_user_uuid(user_uuid=str(user.UUID))
     return MadorService(session=session).get_all_madors()
     

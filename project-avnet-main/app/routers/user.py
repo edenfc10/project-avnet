@@ -27,7 +27,8 @@ userRouter = APIRouter()
 # הגדרת רמות הרשאה - מי יכול לגשת לכל נתיב
 allow_super_admin_only = TokenValidator(allowed_roles=["super_admin"])
 allow_admins_only = TokenValidator(allowed_roles=["admin", "super_admin"])
-validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent"])
+validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent", "viewer"])
+theirs_only = TokenValidator(allowed_roles=["admin", "super_admin", "agent" ,"viewer"], allow_theirs_only=True)
 
 
 # --- GET /users/all ---
@@ -35,7 +36,10 @@ validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent"])
 @userRouter.get("/all", status_code=200, response_model=list[UserOutput])
 def get_all_users(session: Session = Depends(get_db), user = Depends(validator)):
     try:
-        return UserService(session=session).get_all_users(current_user_role=user.role.value)
+        return UserService(session=session).get_all_users(
+            current_user_role=user.role.value,
+            current_user_uuid=str(user.UUID),
+        )
     except Exception as error:
         print(error)
         raise HTTPException(status_code=500, detail=str(error))
@@ -45,8 +49,12 @@ def get_all_users(session: Session = Depends(get_db), user = Depends(validator))
 # שולף משתמש בודד לפי מזהה המשתמש
 @userRouter.get("/{s_id}", status_code=200, response_model=UserOutput)
 def get_user_by_s_id(s_id: str, session: Session = Depends(get_db), user = Depends(validator)):
-    user = UserService(session=session).get_user_by_s_id(s_id=s_id)
-    return UserOutput.model_validate(user, from_attributes=True)
+    requested_user = UserService(session=session).get_user_by_s_id_for_requester(
+        s_id=s_id,
+        requester_role=user.role.value,
+        requester_uuid=str(user.UUID),
+    )
+    return UserOutput.model_validate(requested_user, from_attributes=True)
    
 
 # --- POST /users/create-agent ---
@@ -62,6 +70,13 @@ def create_agent_user(user_data: UserInCreateNoRole, session: Session = Depends(
 @userRouter.post("/create-admin", status_code=200, response_model=UserOutput, dependencies=[Depends(allow_super_admin_only)])
 def create_admin_user(user_data: UserInCreateNoRole, session: Session = Depends(get_db)):
     return UserService(session=session).create_admin_user(user_data=user_data)
+
+
+# --- POST /users/create-viewer ---
+# יוצר משתמש viewer - רק admin או super_admin
+@userRouter.post("/create-viewer", status_code=200, response_model=UserOutput, dependencies=[Depends(allow_admins_only)])
+def create_viewer_user(user_data: UserInCreateNoRole, session: Session = Depends(get_db)):
+    return UserService(session=session).create_viewer_user(user_data=user_data)
     
 
 # --- DELETE /users/{user_id} ---

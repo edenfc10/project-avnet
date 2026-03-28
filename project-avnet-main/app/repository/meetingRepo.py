@@ -48,7 +48,7 @@ class MeetingRepository(BaseRepository):
         meeting = self.session.query(Meeting).filter(Meeting.UUID == meeting_uuid).first()
         return meeting
 
-    def user_can_access_meeting(self, user_uuid: str, meeting_uuid: str) -> bool:
+    def user_can_access_meeting(self, user_uuid: str, meeting_uuid: str, user_role: str | None = None) -> bool:
         """
         בודק האם למשתמש יש גישה לפגישה:
         - המשתמש צריך להיות חבר בלפחות מדור אחד של הפגישה
@@ -67,13 +67,18 @@ class MeetingRepository(BaseRepository):
         if not user:
             return False
 
+        # בדיקת חברות במדור
+        user_mador_uuids = {m.UUID for m in user.madors}
+
+        # viewer רואה כל פגישה במדורים שלו (לא לפי access_level מדויק)
+        if user_role == "viewer":
+            return any(mador.UUID in user_mador_uuids for mador in meeting.madors)
+
         meeting_level = getattr(meeting.accessLevel, "value", meeting.accessLevel)
         meeting_level = str(meeting_level).lower().strip()
         if meeting_level not in {"audio", "video", "blast_dial"}:
             return False
 
-        # בדיקת חברות במדור
-        user_mador_uuids = {m.UUID for m in user.madors}
         for mador in meeting.madors:
             if mador.UUID not in user_mador_uuids:
                 continue

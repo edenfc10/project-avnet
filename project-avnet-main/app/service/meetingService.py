@@ -38,6 +38,7 @@ class MeetingService:
             UUID=meeting.UUID,
             m_number=meeting.m_number,
             accessLevel=meeting.accessLevel,
+            password=getattr(meeting, "password", None),
             madors=[m.UUID for m in meeting.madors],
         )
 
@@ -57,7 +58,7 @@ class MeetingService:
         """
         מחזיר פגישה בודדת לפי המשתמש המחובר:
         - admin/super_admin: גישה מלאה
-        - agent: רק אם יש גישה לפי מדור + access level
+        - agent/viewer: רק אם יש גישה לפי מדור + access level
         """
         meeting = self.__meetingRepository.get_meeting_by_uuid(meeting_uuid=meeting_uuid)
         if not meeting:
@@ -69,6 +70,7 @@ class MeetingService:
         can_access = self.__meetingRepository.user_can_access_meeting(
             user_uuid=user_uuid,
             meeting_uuid=meeting_uuid,
+            user_role=user_role,
         )
         if not can_access:
             raise HTTPException(status_code=403, detail="You are not allowed to access this meeting")

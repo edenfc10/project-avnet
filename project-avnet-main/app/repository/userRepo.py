@@ -54,6 +54,11 @@ class UserRepository(BaseRepository):
         """ יוצר משתמש עם תפקיד admin אוטומטית """
         data = UserInCreate(**user_data.model_dump(), role="admin").model_dump(exclude_none=True)
         return self.create_user(UserInCreate(**data))
+
+    def create_viewer_user(self, user_data: UserInCreateNoRole):
+        """ יוצר משתמש עם תפקיד viewer אוטומטית """
+        data = UserInCreate(**user_data.model_dump(), role="viewer").model_dump(exclude_none=True)
+        return self.create_user(UserInCreate(**data))
     
     def get_user_by_s_id(self, s_id: str) -> UserOutput:
         """ מוצא משתמש לפי מזהה המשתמש (s_id) """
@@ -63,6 +68,32 @@ class UserRepository(BaseRepository):
     def get_all_users(self) -> list[UserOutput]:
         """ מחזיר את כל המשתמשים במערכת """
         users = self.session.query(User).all()
+        return users
+
+    def get_users_in_same_madors(self, user_uuid: str) -> list[UserOutput]:
+        """
+        מחזיר משתמשים שחולקים לפחות מדור אחד עם המשתמש הנתון.
+        """
+        try:
+            normalized_user_uuid = uuid.UUID(str(user_uuid))
+        except (ValueError, TypeError):
+            return []
+
+        user = self.session.query(User).filter(User.UUID == normalized_user_uuid).first()
+        if not user:
+            return []
+
+        mador_ids = [m.UUID for m in user.madors]
+        if not mador_ids:
+            return [user]
+
+        users = (
+            self.session.query(User)
+            .join(User.madors)
+            .filter(Mador.UUID.in_(mador_ids))
+            .distinct()
+            .all()
+        )
         return users
 
     def delete_user(self, user_id: str) -> bool:

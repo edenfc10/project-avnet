@@ -28,8 +28,9 @@ security = HTTPBearer()
 class TokenValidator:
     """ בודק טוקן JWT ומוודא שהתפקיד של המשתמש מורשה """
 
-    def __init__(self, allowed_roles: list[str]):
+    def __init__(self, allowed_roles: list[str], allow_theirs_only: bool = False):
         self.allowed_roles = allowed_roles  # רשימת התפקידים המותרים
+        self.allow_theirs_only = allow_theirs_only
 
     def __call__(self, credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
         """ נקרא אוטומטית על ידי FastAPI בכל endpoint שמשתמש ב-Depends """

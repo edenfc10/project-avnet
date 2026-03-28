@@ -27,6 +27,7 @@ class UserRole(str, Enum):
     super_admin = "super_admin"  # מנהל על - שליטה מלאה על המערכת
     admin = "admin"              # מנהל - יכול לנהל agents ופגישות
     agent = "agent"              # סוכן - צפייה בלבד לפי הרשאות
+    viewer = "viewer"            # צופה - צפייה בסיסית לפי הרשאות מדור
 
 
 # --- Association Table: user_mador_association ---

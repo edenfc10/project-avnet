@@ -26,7 +26,7 @@ meetingRouter = APIRouter()
 # הגדרת רמות הרשאה
 allow_super_admin_only = TokenValidator(allowed_roles=["super_admin"])
 allow_admins_only = TokenValidator(allowed_roles=["admin", "super_admin"])
-validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent"])
+validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent", "viewer"])
 
 # הקובץ שמגדיר איך הלקוח מדבר עם השרת
 @meetingRouter.get("/all", status_code=200, response_model=list[MeetingOutput])
@@ -46,7 +46,7 @@ def get_meeting_by_uuid(meeting_uuid: str, session: Session = Depends(get_db), u
         user_role=user_role,
     )
    
-@meetingRouter.post("/create", status_code=200, response_model=MeetingOutput, dependencies=[Depends(allow_admins_only)])
+@meetingRouter.post("/create", status_code=200, response_model=MeetingOutput, dependencies=[Depends(allow_super_admin_only)])
 def create_meeting(meeting_data: MeetingInCreate, session: Session = Depends(get_db)):
     return MeetingService(session=session).create_meeting(meeting_data=meeting_data)
 

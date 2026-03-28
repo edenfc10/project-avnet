@@ -18,8 +18,10 @@
 //   /profile, /settings, /help - דפי העדפות
 // ============================================================================
 
+import { useEffect, useMemo, useState } from "react";
 import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { madorAPI } from "./services/api";
 import "./App.css";
 
 // Pages
@@ -55,7 +57,72 @@ function MainLayout() {
   const navigate = useNavigate();
   const { logout, userRole, currentUser } = useAuth();
   const isAdminOrSuperAdmin = userRole === "admin" || userRole === "super_admin";
-  const defaultRoute = isAdminOrSuperAdmin ? "/dashboard" : "/audio";
+  const [memberMadors, setMemberMadors] = useState([]);
+
+  useEffect(() => {
+    const loadMadorsForMember = async () => {
+      if (!userRole || isAdminOrSuperAdmin) {
+        setMemberMadors([]);
+        return;
+      }
+
+      try {
+        const response = await madorAPI.listMadors();
+        setMemberMadors(response.data || []);
+      } catch {
+        setMemberMadors([]);
+      }
+    };
+
+    loadMadorsForMember();
+  }, [userRole, isAdminOrSuperAdmin]);
+
+  const allowedMeetingTypes = useMemo(() => {
+    if (isAdminOrSuperAdmin) {
+      return new Set(["audio", "video", "blast_dial"]);
+    }
+
+    if (userRole === "viewer") {
+      return new Set(["audio", "video", "blast_dial"]);
+    }
+
+    const currentUserId = String(currentUser?.UUID || "").trim();
+    if (!currentUserId) {
+      return new Set();
+    }
+
+    const allowed = new Set();
+    const normalizedCurrentUserId = currentUserId.toLowerCase();
+    memberMadors.forEach((mador) => {
+      (mador.member_access_levels || []).forEach((row) => {
+        const rowUserId = String(row.user_id || row.userId || "").trim().toLowerCase();
+        if (!rowUserId || rowUserId !== normalizedCurrentUserId) {
+          return;
+        }
+
+        const level = String(row.access_level || "").toLowerCase().trim();
+        if (["audio", "video", "blast_dial"].includes(level)) {
+          allowed.add(level);
+        }
+      });
+    });
+
+    if (userRole === "viewer") {
+      allowed.add("blast_dial");
+    }
+
+    return allowed;
+  }, [currentUser?.UUID, isAdminOrSuperAdmin, memberMadors, userRole]);
+
+  const defaultRoute = isAdminOrSuperAdmin
+    ? "/dashboard"
+    : allowedMeetingTypes.has("audio")
+      ? "/audio"
+      : allowedMeetingTypes.has("blast_dial")
+        ? "/blastdial"
+        : allowedMeetingTypes.has("video")
+          ? "/video"
+          : "/madors";
 
   const handleLogout = () => {
     logout();
@@ -111,18 +178,24 @@ function MainLayout() {
 
         <div className="sidebar-section">
           <div className="sidebar-section-title">Meetings</div>
-          <NavLink to="/audio">
-            <img src={audioIcon} className="nav-icon" alt="Audio Meetings" />
-            Audio Meetings
-          </NavLink>
-          <NavLink to="/blastdial">
-            <img src={blastdialIcon} className="nav-icon" alt="Blastdial Meetings" />
-            Blastdial Meetings
-          </NavLink>
-          <NavLink to="/video">
-            <img src={videoIcon} className="nav-icon" alt="Video Meetings" />
-            Video Meetings
-          </NavLink>
+          {allowedMeetingTypes.has("audio") ? (
+            <NavLink to="/audio">
+              <img src={audioIcon} className="nav-icon" alt="Audio Meetings" />
+              Audio Meetings
+            </NavLink>
+          ) : null}
+          {allowedMeetingTypes.has("blast_dial") ? (
+            <NavLink to="/blastdial">
+              <img src={blastdialIcon} className="nav-icon" alt="Blastdial Meetings" />
+              Blastdial Meetings
+            </NavLink>
+          ) : null}
+          {allowedMeetingTypes.has("video") ? (
+            <NavLink to="/video">
+              <img src={videoIcon} className="nav-icon" alt="Video Meetings" />
+              Video Meetings
+            </NavLink>
+          ) : null}
         </div>
 
         <div className="sidebar-section">

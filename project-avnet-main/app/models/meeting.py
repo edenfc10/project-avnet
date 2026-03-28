@@ -48,6 +48,8 @@ class Meeting(Base):
     m_number = Column(String(15), unique=True, nullable=False, index=True)
     # סוג הפגישה - audio / video / blast_dial
     accessLevel = Column(SqlEnum(AccessLevel), nullable=False)
+    # סיסמת הוועידה (אופציונלי) - נשמרת בDB לצפייה משותפת
+    password = Column(String(120), nullable=True)
 
     # --- Relationships (קשרים) ---
     # רשימת המדורים שהפגישה שייכת אליהם

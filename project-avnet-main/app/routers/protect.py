@@ -1,14 +1,14 @@
+﻿# ============================================================================
+# Protected Router - × ×ª×™×‘×™× ×ž×•×’× ×™× ×©×“×•×¨×©×™× JWT
 # ============================================================================
-# Protected Router - נתיבים מוגנים שדורשים JWT
-# ============================================================================
-# נתיבים:
-#   GET /protected/me - מחזיר את פרטי המשתמש המחובר (לפי הטוקן)
+# × ×ª×™×‘×™×:
+#   GET /protected/me - ×ž×—×–×™×¨ ××ª ×¤×¨×˜×™ ×”×ž×©×ª×ž×© ×”×ž×—×•×‘×¨ (×œ×¤×™ ×”×˜×•×§×Ÿ)
 #
-# פונקצית get_current_user:
-#   - מפענחת את הטוקן JWT מה-Authorization header
-#   - מוצאת את המשתמש מהDB לפי ה-s_id שבטוקן
-#   - מחזירה UserOutput עם כל הפרטים
-#   - זה מה שהפרונטאנד קורא לו בכל טעינת דף כדי לדעת מי המשתמש
+# ×¤×•× ×§×¦×™×ª get_current_user:
+#   - ×ž×¤×¢× ×—×ª ××ª ×”×˜×•×§×Ÿ JWT ×ž×”-Authorization header
+#   - ×ž×•×¦××ª ××ª ×”×ž×©×ª×ž×© ×ž×”DB ×œ×¤×™ ×”-s_id ×©×‘×˜×•×§×Ÿ
+#   - ×ž×—×–×™×¨×” UserOutput ×¢× ×›×œ ×”×¤×¨×˜×™×
+#   - ×–×” ×ž×” ×©×”×¤×¨×•× ×˜×× ×“ ×§×•×¨× ×œ×• ×‘×›×œ ×˜×¢×™× ×ª ×“×£ ×›×“×™ ×œ×“×¢×ª ×ž×™ ×”×ž×©×ª×ž×©
 # ============================================================================
 
 from fastapi import Depends, HTTPException, status
@@ -23,7 +23,7 @@ from app.schema.user import UserOutput
 
 from fastapi import APIRouter
 
-AUTH_PREFIX = 'Bearer '  # קידומת Authorization header
+AUTH_PREFIX = 'Bearer '  # ×§×™×“×•×ž×ª Authorization header
 
 security = HTTPBearer()
 
@@ -33,8 +33,8 @@ def get_current_user(
     session: Session = Depends(get_db)
 ) -> UserOutput:
     """
-    Dependency שמפענח את הטוקן ומחזיר את המשתמש הנוכחי.
-    משמש את הfrontend לבדוק שהטוקן תקין ולקבל את פרטי המשתמש.
+    Dependency ×©×ž×¤×¢× ×— ××ª ×”×˜×•×§×Ÿ ×•×ž×—×–×™×¨ ××ª ×”×ž×©×ª×ž×© ×”× ×•×›×—×™.
+    ×ž×©×ž×© ××ª ×”frontend ×œ×‘×“×•×§ ×©×”×˜×•×§×Ÿ ×ª×§×™×Ÿ ×•×œ×§×‘×œ ××ª ×¤×¨×˜×™ ×”×ž×©×ª×ž×©.
     """
     auth_exception = HTTPException(
         status_code = status.HTTP_401_UNAUTHORIZED ,        
@@ -47,7 +47,7 @@ def get_current_user(
     if payload and payload.get("s_id"):
         try:
             user = UserService(session=session).get_user_by_s_id(payload["s_id"])
-            return UserOutput(UUID=user.UUID, s_id=user.s_id, username=user.username, role=user.role, madors=user.madors)
+            return UserOutput(UUID=user.UUID, s_id=user.s_id, username=user.username, role=user.role, groups=user.groups)
         except Exception as error:
             raise error
     raise auth_exception
@@ -58,3 +58,4 @@ protectRouter = APIRouter()
 @protectRouter.get("/me")
 def get_protected_data(user: UserOutput = Depends(get_current_user)):
     return {"message": "This is a protected route", "user": user}
+

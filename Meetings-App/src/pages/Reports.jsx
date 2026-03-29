@@ -1,14 +1,14 @@
+﻿// ============================================================================
+// Reports Page - ×“×£ ×“×•×—×•×ª / KPI
 // ============================================================================
-// Reports Page - דף דוחות / KPI
-// ============================================================================
-// מציג סטטיסטיקות מהירות:
-//   - מספר משתמשים, מדורים, ישיבות, חברויות
-//   - סקירת פעילות לכל מדור
-// טוען את הנתונים מ-userAPI ו-madorAPI במקביל.
+// ×ž×¦×™×’ ×¡×˜×˜×™×¡×˜×™×§×•×ª ×ž×”×™×¨×•×ª:
+//   - ×ž×¡×¤×¨ ×ž×©×ª×ž×©×™×, ×ž×“×•×¨×™×, ×™×©×™×‘×•×ª, ×—×‘×¨×•×™×•×ª
+//   - ×¡×§×™×¨×ª ×¤×¢×™×œ×•×ª ×œ×›×œ ×ž×“×•×¨
+// ×˜×•×¢×Ÿ ××ª ×”× ×ª×•× ×™× ×ž-userAPI ×•-groupAPI ×‘×ž×§×‘×™×œ.
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
-import { madorAPI, userAPI } from "../services/api";
+import { groupAPI, userAPI } from "../services/api";
 
 export default function Reports() {
   const [users, setUsers] = useState([]);
@@ -24,7 +24,7 @@ export default function Reports() {
 
         const [usersResponse, groupsResponse] = await Promise.all([
           userAPI.getAllUsers(),
-          madorAPI.listMadors(),
+          groupAPI.listGroups(),
         ]);
 
         setUsers(usersResponse.data || []);
@@ -89,7 +89,7 @@ export default function Reports() {
                     <div>
                       <div className="meeting-title">{group.name}</div>
                       <div className="meeting-meta">
-                        Members: {group.members?.length || 0} • Meetings: {group.meetings?.length || 0}
+                        Members: {group.members?.length || 0} â€¢ Meetings: {group.meetings?.length || 0}
                       </div>
                     </div>
                   </div>
@@ -102,3 +102,4 @@ export default function Reports() {
     </div>
   );
 }
+

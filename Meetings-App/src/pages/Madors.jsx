@@ -1,21 +1,21 @@
-// ============================================================================
-// Madors Page - ניהול מדורים (קבוצות)
+﻿// ============================================================================
+// Groups Page - דף ניהול קבוצות (קבוצות)
 // ============================================================================
 // דף זה מאפשר:
-//   - צפייה בכל המדורים והחברים שלהם
-//   - יצירת מדור חדש (super_admin בלבד)
-//   - מחיקת מדור (admin/super_admin)
-//   - לחיצה כפולה על מדור פותחת מודל ניהול חברים:
+//   - צפייה בכל הקבוצות והחברים שלהן
+//   - יצירת קבוצה חדשה (super_admin בלבד)
+//   - מחיקת קבוצה (admin/super_admin)
+//   - לחיצה כפולה על קבוצה פותחת מודל ניהול חברים:
 //     - הוספת חבר (agent/viewer) עם בחירת access_level
 //     - הסרת חבר
 //     - צפייה ברמת הגישה של כל חבר
 // ============================================================================
 
 import { useEffect, useState } from "react";
-import { madorAPI, userAPI } from "../services/api";
+import { groupAPI, userAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
-export default function Madors() {
+export default function Groups() {
   const { userRole, currentUser } = useAuth();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,10 +82,10 @@ export default function Madors() {
     try {
       setLoading(true);
       setError("");
-      const response = await madorAPI.listMadors();
+      const response = await groupAPI.listGroups();
       setGroups((response.data || []).map(normalizeGroup));
     } catch (err) {
-      const message = err.response?.data?.detail || "Failed to load madors.";
+      const message = err.response?.data?.detail || "Failed to load groups.";
       setError(message);
     } finally {
       setLoading(false);
@@ -122,12 +122,12 @@ export default function Madors() {
       setCreateLoading(true);
       setCreateError("");
       setCreateSuccess("");
-      await madorAPI.createMador({ name: trimmed });
+      await groupAPI.createGroup({ name: trimmed });
       setCreateName("");
-      setCreateSuccess("Mador created successfully.");
+      setCreateSuccess("Group created successfully.");
       await loadGroups();
     } catch (err) {
-      const message = err.response?.data?.detail || "Failed to create mador.";
+      const message = err.response?.data?.detail || "Failed to create group.";
       setCreateError(message);
     } finally {
       setCreateLoading(false);
@@ -144,7 +144,7 @@ export default function Madors() {
 
   const handleDeleteGroup = async (group) => {
     if (!canManage) {
-      setDeleteError("Only admin or super_admin can delete madors.");
+      setDeleteError("Only admin or super_admin can delete groups.");
       return;
     }
 
@@ -153,14 +153,14 @@ export default function Madors() {
       setDeleteLoadingId(groupId);
       setDeleteError("");
       setDeleteSuccess("");
-      await madorAPI.deleteMador(groupId);
+      await groupAPI.deleteGroup(groupId);
       setGroups((prev) => prev.filter((g) => getGroupId(g) !== groupId));
       if (selectedGroup && getGroupId(selectedGroup) === groupId) {
         setSelectedGroup(null);
       }
       setDeleteSuccess(`Group ${group.name} deleted successfully.`);
     } catch (err) {
-      setDeleteError(err.response?.data?.detail || "Failed to delete mador.");
+      setDeleteError(err.response?.data?.detail || "Failed to delete group.");
     } finally {
       setDeleteLoadingId("");
     }
@@ -176,7 +176,7 @@ export default function Madors() {
         setModalError("Selected user is missing s_id.");
         return;
       }
-      const res = await madorAPI.addMember(getGroupId(selectedGroup), selectedUser.s_id, addAccessLevel);
+      const res = await groupAPI.addMember(getGroupId(selectedGroup), selectedUser.s_id, addAccessLevel);
       const updated = normalizeGroup(res.data);
       setSelectedGroup(updated);
       setAddUserId("");
@@ -199,7 +199,7 @@ export default function Madors() {
         setModalError("Member s_id not found.");
         return;
       }
-      const res = await madorAPI.removeMember(getGroupId(selectedGroup), member.s_id);
+      const res = await groupAPI.removeMember(getGroupId(selectedGroup), member.s_id);
       const updated = normalizeGroup(res.data);
       setSelectedGroup(updated);
       setGroups((prev) => prev.map((g) => (getGroupId(g) === getGroupId(updated) ? updated : g)));
@@ -233,7 +233,7 @@ export default function Madors() {
 
   return (
     <div className="page">
-      <h2 className="page-header">Madors</h2>
+      <h2 className="page-header">Groups</h2>
 
       {isSuperAdmin ? (
         <div className="card">
@@ -242,13 +242,13 @@ export default function Madors() {
             <input
               type="text"
               className="search-input"
-              placeholder="Enter mador name"
+              placeholder="Enter group name"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
               maxLength={120}
             />
             <button className="search-button" type="submit" disabled={createLoading}>
-              {createLoading ? "Creating..." : "Create Mador"}
+              {createLoading ? "Creating..." : "Create Group"}
             </button>
           </form>
           {createError ? <div className="error-banner">{createError}</div> : null}
@@ -258,14 +258,14 @@ export default function Madors() {
         </div>
       ) : (
         <div className="card">
-          <div className="empty-state">Only super_admin can create a mador.</div>
+          <div className="empty-state">Only super_admin can create a group.</div>
           {deleteError ? <div className="error-banner">{deleteError}</div> : null}
           {deleteSuccess ? <div className="success-banner">{deleteSuccess}</div> : null}
         </div>
       )}
 
       <div className="card fill">
-        <h3 className="card-title">All Madors ({groups.length})</h3>
+        <h3 className="card-title">All Groups ({groups.length})</h3>
 
         {canViewMembers && (
           <p className="info-hint">
@@ -273,13 +273,13 @@ export default function Madors() {
           </p>
         )}
 
-        {loading ? <div className="empty-state">Loading madors...</div> : null}
+        {loading ? <div className="empty-state">Loading groups...</div> : null}
         {error ? <div className="error-banner">{error}</div> : null}
 
         {!loading && !error ? (
           <div className="meetings-list">
             {groups.length === 0 ? (
-              <div className="empty-state">No madors found.</div>
+              <div className="empty-state">No groups found.</div>
             ) : (
               groups.map((group) => {
                 const canManageThis = canManage;
@@ -433,3 +433,4 @@ export default function Madors() {
     </div>
   );
 }
+

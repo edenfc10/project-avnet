@@ -1,13 +1,13 @@
-# ============================================================================
+﻿# ============================================================================
 # Database Initialization - אתחול בסיס הנתונים
 # ============================================================================
 # קובץ זה רץ בעליית האפליקציה (lifespan ב-main.py).
 # תפקידים:
-#   1. אם RESET_DB מוגדר - מוחק את כל הטבלאות ויוצר מחדש (!מוחק כל data!)
-#   2. יוצר את כל הטבלאות שחסרות (create_all)
-#   3. מנסה retry אם הDB עדיין לא מוכן
+#   1. אם RESET_DB מוגדר - מוחק את כל הטבלאות ויוצר מחדש (לא מוחק כל data!)
+#   2. יוצר את כל הטבלאות החסרות (create_all)
+#   3. מנסה retry אם ה-DB עדיין לא מוכן
 #
-# חשוב: חייבים לייבא את כל המודלים כאן כדי שהם יהיו רשומים ב-Base.metadata!
+# הערה: חיייבים לייבא את כל המודלים כאן כדי שהם יהיו רשומים ב-Base.metadata!
 # ============================================================================
 
 import os
@@ -17,18 +17,18 @@ from sqlalchemy.exc import OperationalError
 from app.core.database import Base, _engine
 # ייבוא כל המודלים - חייב כדי שיהיו רשומים ב-Base.metadata לפני create_all
 import app.models.user  # noqa: F401
-import app.models.mador  # noqa: F401
+import app.models.group  # noqa: F401
 import app.models.meeting  # noqa: F401
-import app.models.member_mador_access  # noqa: F401
-import app.models.events  # noqa: F401 — רישום event listeners (מושבתים)
+import app.models.member_group_access  # noqa: F401
+import app.models.events  # noqa: F401 â€” ×¨×™×©×•× event listeners (×ž×•×©×‘×ª×™×)
 
 
 
 def create_tables(retries=5, delay=3):
     """
-    יוצר את כל הטבלאות בDB.
+    יוצר את כל הטבלאות ב-DB.
     אם RESET_DB=1 מוגדר - מוחק הכל תחילה.
-    מנסה מחדש אם הDB לא מוכן (Docker startup).
+    מנסה מחדש אם ה-DB לא מוכן (Docker startup).
     """
     # If RESET_DB is set, drop all existing tables first
     if os.getenv("RESET_DB") in ("1", "true", "True"):

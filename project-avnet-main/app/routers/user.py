@@ -1,97 +1,199 @@
-# ============================================================================
-# User Router - נתיבי API לניהול משתמשים
-# ============================================================================
-# נתיבים:
-#   GET    /users/all              - שליפת כל המשתמשים
-#   GET    /users/{s_id}           - שליפת משתמש לפי מזהה
-#   POST   /users/create-agent     - יצירת agent (לאדמינים בלבד)
-#   POST   /users/create-admin     - יצירת admin (לsuper_admin בלבד)
-#   DELETE /users/{user_id}        - מחיקת משתמש
-#   GET    /users/mador/{uuid}/meetings - פגישות מדור לפי רמת גישה
-#
-# הרשאות (TokenValidator):
-#   - allow_super_admin_only: רק super_admin
-#   - allow_admins_only: admin + super_admin
-#   - validator: כל התפקידים (כולל agent)
+﻿# ============================================================================
+# User Router - API routes for user management
 # ============================================================================
 
 from fastapi import APIRouter, Depends, HTTPException
-from app.schema.user import BoolOutput, UserInCreateNoRole, UserOutput
-from app.core.database import get_db
 from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.schema.user import BoolOutput, UserInCreateNoRole, UserOutput
 from app.security.TokenValidator import TokenValidator
 from app.service.userService import UserService
+from logger import LoggerManager
+
 
 userRouter = APIRouter()
 
-# הגדרת רמות הרשאה - מי יכול לגשת לכל נתיב
 allow_super_admin_only = TokenValidator(allowed_roles=["super_admin"])
 allow_admins_only = TokenValidator(allowed_roles=["admin", "super_admin"])
 validator = TokenValidator(allowed_roles=["admin", "super_admin", "agent", "viewer"])
-theirs_only = TokenValidator(allowed_roles=["admin", "super_admin", "agent" ,"viewer"], allow_theirs_only=True)
 
 
-# --- GET /users/all ---
-# מחזיר את כל המשתמשים (מסנן super_admin אם הקורא לא סופר)
 @userRouter.get("/all", status_code=200, response_model=list[UserOutput])
-def get_all_users(session: Session = Depends(get_db), user = Depends(validator)):
+def get_all_users(session: Session = Depends(get_db), user=Depends(validator)):
     try:
+        LoggerManager.get_logger().info(
+            "User %s:%s with role %s requested all users",
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
         return UserService(session=session).get_all_users(
             current_user_role=user.role.value,
             current_user_uuid=str(user.UUID),
         )
     except Exception as error:
-        print(error)
+        LoggerManager.get_logger().exception(
+            "Failed to fetch all users for requester %s:%s role=%s",
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
         raise HTTPException(status_code=500, detail=str(error))
-       
 
-# --- GET /users/{s_id} ---
-# שולף משתמש בודד לפי מזהה המשתמש
+
 @userRouter.get("/{s_id}", status_code=200, response_model=UserOutput)
-def get_user_by_s_id(s_id: str, session: Session = Depends(get_db), user = Depends(validator)):
-    requested_user = UserService(session=session).get_user_by_s_id_for_requester(
-        s_id=s_id,
-        requester_role=user.role.value,
-        requester_uuid=str(user.UUID),
-    )
-    return UserOutput.model_validate(requested_user, from_attributes=True)
-   
+def get_user_by_s_id(s_id: str, session: Session = Depends(get_db), user=Depends(validator)):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s with role %s requested user by s_id=%s",
+            user.s_id,
+            user.UUID,
+            user.role.value,
+            s_id,
+        )
+        requested_user = UserService(session=session).get_user_by_s_id_for_requester(
+            s_id=s_id,
+            requester_role=user.role.value,
+            requester_uuid=str(user.UUID),
+        )
+        return UserOutput.model_validate(requested_user, from_attributes=True)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to fetch user s_id=%s for requester %s:%s role=%s",
+            s_id,
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
+        raise HTTPException(status_code=500, detail=str(error))
 
-# --- POST /users/create-agent ---
-# יוצר משתמש agent - רק admin או super_admin
-@userRouter.post("/create-agent", status_code=200, response_model=UserOutput, dependencies=[Depends(allow_admins_only)])
-def create_agent_user(user_data: UserInCreateNoRole, session: Session = Depends(get_db)):
+
+@userRouter.post("/create-agent", status_code=200, response_model=UserOutput)
+def create_agent_user(
+    user_data: UserInCreateNoRole,
+    session: Session = Depends(get_db),
+    user=Depends(allow_admins_only),
+):
+    try:
+        LoggerManager.get_logger().info(
+            "Creating agent user with s_id=%s by requester s_id=%s role=%s",
+            user_data.s_id,
+            user.s_id,
+            user.role.value,
+        )
         return UserService(session=session).create_agent_user(user_data=user_data)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to create agent user s_id=%s by requester %s:%s role=%s",
+            user_data.s_id,
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
+        raise HTTPException(status_code=500, detail=str(error))
 
-       
-        
-# --- POST /users/create-admin ---
-# יוצר משתמש admin - רק super_admin
-@userRouter.post("/create-admin", status_code=200, response_model=UserOutput, dependencies=[Depends(allow_super_admin_only)])
-def create_admin_user(user_data: UserInCreateNoRole, session: Session = Depends(get_db)):
-    return UserService(session=session).create_admin_user(user_data=user_data)
+
+@userRouter.post("/create-admin", status_code=200, response_model=UserOutput)
+def create_admin_user(
+    user_data: UserInCreateNoRole,
+    session: Session = Depends(get_db),
+    user=Depends(allow_super_admin_only),
+):
+    try:
+        LoggerManager.get_logger().info(
+            "Creating admin user with s_id=%s by requester s_id=%s role=%s",
+            user_data.s_id,
+            user.s_id,
+            user.role.value,
+        )
+        return UserService(session=session).create_admin_user(user_data=user_data)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to create admin user s_id=%s by requester %s:%s role=%s",
+            user_data.s_id,
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
+        raise HTTPException(status_code=500, detail=str(error))
 
 
-# --- POST /users/create-viewer ---
-# יוצר משתמש viewer - רק admin או super_admin
-@userRouter.post("/create-viewer", status_code=200, response_model=UserOutput, dependencies=[Depends(allow_admins_only)])
-def create_viewer_user(user_data: UserInCreateNoRole, session: Session = Depends(get_db)):
-    return UserService(session=session).create_viewer_user(user_data=user_data)
-    
+@userRouter.post("/create-viewer", status_code=200, response_model=UserOutput)
+def create_viewer_user(
+    user_data: UserInCreateNoRole,
+    session: Session = Depends(get_db),
+    user=Depends(allow_admins_only),
+):
+    try:
+        LoggerManager.get_logger().info(
+            "Creating viewer user with s_id=%s by requester s_id=%s role=%s",
+            user_data.s_id,
+            user.s_id,
+            user.role.value,
+        )
+        return UserService(session=session).create_viewer_user(user_data=user_data)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to create viewer user s_id=%s by requester %s:%s role=%s",
+            user_data.s_id,
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
+        raise HTTPException(status_code=500, detail=str(error))
 
-# --- DELETE /users/{user_id} ---
-# מוחק משתמש - רק admin או super_admin
-@userRouter.delete("/{user_id}", status_code=200, response_model=BoolOutput, dependencies=[Depends(allow_admins_only)])
-def delete_user(user_id: str, session: Session = Depends(get_db), user = Depends(allow_admins_only)):
-    success = UserService(session=session).delete_user(
-        user_id=user_id,
-        current_user_role=user.role.value,
-        current_user_s_id=user.s_id,
-    )
-    return BoolOutput(success=success)
 
-# --- GET /users/mador/{mador_uuid}/meetings ---
-# מחזיר פגישות שהמשתמש הנוכחי רשאי לראות במדור (לפי access level)
-@userRouter.get("/mador/{mador_uuid}/meetings", status_code=200, response_model=list[str])
-def get_mador_meetings_by_user_uuid(mador_uuid: str, session: Session = Depends(get_db), user = Depends(validator)):
-    return UserService(session=session).get_mador_meetings_by_user_uuid(user_uuid=str(user.UUID), mador_uuid=mador_uuid)
+@userRouter.delete("/{user_id}", status_code=200, response_model=BoolOutput)
+def delete_user(user_id: str, session: Session = Depends(get_db), user=Depends(allow_admins_only)):
+    try:
+        LoggerManager.get_logger().info(
+            "Deleting user s_id=%s by requester s_id=%s role=%s",
+            user_id,
+            user.s_id,
+            user.role.value,
+        )
+        success = UserService(session=session).delete_user(
+            user_id=user_id,
+            current_user_role=user.role.value,
+            current_user_s_id=user.s_id,
+        )
+        return BoolOutput(success=success)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to delete user s_id=%s by requester %s:%s role=%s",
+            user_id,
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@userRouter.get("/group/{group_uuid}/meetings", status_code=200, response_model=list[str])
+def get_group_meetings_by_user_uuid(
+    group_uuid: str,
+    session: Session = Depends(get_db),
+    user=Depends(validator),
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s with role %s requested group meetings for group_uuid=%s",
+            user.s_id,
+            user.UUID,
+            user.role.value,
+            group_uuid,
+        )
+        return UserService(session=session).get_group_meetings_by_user_uuid(
+            user_uuid=str(user.UUID),
+            group_uuid=group_uuid,
+        )
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to fetch group meetings for group_uuid=%s by requester %s:%s role=%s",
+            group_uuid,
+            user.s_id,
+            user.UUID,
+            user.role.value,
+        )
+        raise HTTPException(status_code=500, detail=str(error))

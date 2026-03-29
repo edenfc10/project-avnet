@@ -1,11 +1,11 @@
-// ============================================================================
+﻿// ============================================================================
 // Vite Configuration - הגדרות שרת הפיתוח
 // ============================================================================
 // הגדרות עיקריות:
 //   - host: 0.0.0.0 (חשוף לכל כתובת - נדרש לעבודה ב-Docker)
 //   - port: 5173
 //   - usePolling: true (נדרש ל-hot reload ב-Docker/WSL)
-//   - proxy: מפנה קריאות API ל-http://api:8000 (שם הסרוויס ב-Docker)
+//   - proxy: מפנה קריאות API ל-http://api:8000 (שם השירות ב-Docker)
 // ============================================================================
 
 import { defineConfig } from 'vite'
@@ -31,7 +31,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      '/madors': {
+      '/groups': {
         target: 'http://api:8000',
         changeOrigin: true,
         secure: false,
@@ -49,3 +49,4 @@ export default defineConfig({
     },
   },
 })
+

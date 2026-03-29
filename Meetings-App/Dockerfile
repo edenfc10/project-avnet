@@ -10,6 +10,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install dependencies at build time so the named volume is populated on first start
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
 EXPOSE 5173
 
 # הפעלת שרת פיתוח

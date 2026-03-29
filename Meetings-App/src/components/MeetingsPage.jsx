@@ -1,43 +1,43 @@
+﻿// ============================================================================
+// MeetingsPage - ×§×•×ž×¤×•× × ×˜×ª ×”×¦×’×ª ×™×©×™×‘×•×ª ×›×œ×œ×™×ª (Reusable)
 // ============================================================================
-// MeetingsPage - קומפוננטת הצגת ישיבות כללית (Reusable)
-// ============================================================================
-// קומפוננטה מרכזית שמציגה רשימת ישיבות. משמשת את כל דפי הישיבות
-// (Audio, Video, BlastDial) עם title ו-data שונים.
+// ×§×•×ž×¤×•× × ×˜×” ×ž×¨×›×–×™×ª ×©×ž×¦×™×’×” ×¨×©×™×ž×ª ×™×©×™×‘×•×ª. ×ž×©×ž×©×ª ××ª ×›×œ ×“×¤×™ ×”×™×©×™×‘×•×ª
+// (Audio, Video, BlastDial) ×¢× title ×•-data ×©×•× ×™×.
 //
-// יכולות:
-//   - חיפוש לפי Meeting ID / Group / Name
-//   - עימוד (Pagination) עם 5 ישיבות בעמוד
-//   - יצירת ישיבה חדשה (admin/super_admin בלבד)
-//   - מחיקת ישיבה מ-DB או CMS
-//   - פתיחת מודאל עם פרטי ישיבה מלאים מ-CMS
-//   - עדכון סיסמה של ישיבה ב-CMS
-//   - העשרת נתוני ישיבה מ-CMS (שם, סיסמה, משתתפים, משך)
-//   - בקרת גישה לפי תפקיד: admin רואה הכל, agent רק לפי access_level
+// ×™×›×•×œ×•×ª:
+//   - ×—×™×¤×•×© ×œ×¤×™ Meeting ID / Group / Name
+//   - ×¢×™×ž×•×“ (Pagination) ×¢× 5 ×™×©×™×‘×•×ª ×‘×¢×ž×•×“
+//   - ×™×¦×™×¨×ª ×™×©×™×‘×” ×—×“×©×” (admin/super_admin ×‘×œ×‘×“)
+//   - ×ž×—×™×§×ª ×™×©×™×‘×” ×ž-DB ××• CMS
+//   - ×¤×ª×™×—×ª ×ž×•×“××œ ×¢× ×¤×¨×˜×™ ×™×©×™×‘×” ×ž×œ××™× ×ž-CMS
+//   - ×¢×“×›×•×Ÿ ×¡×™×¡×ž×” ×©×œ ×™×©×™×‘×” ×‘-CMS
+//   - ×”×¢×©×¨×ª × ×ª×•× ×™ ×™×©×™×‘×” ×ž-CMS (×©×, ×¡×™×¡×ž×”, ×ž×©×ª×ª×¤×™×, ×ž×©×š)
+//   - ×‘×§×¨×ª ×’×™×©×” ×œ×¤×™ ×ª×¤×§×™×“: admin ×¨×•××” ×”×›×œ, agent ×¨×§ ×œ×¤×™ access_level
 //
 // Props:
-//   - title: כותרת הדף (Audio/Video/BlastDial)
-//   - data: מערך ישיבות מ-CMS
-//   - loading: האם עדיין טוען
-//   - error: הודעת שגיאה
+//   - title: ×›×•×ª×¨×ª ×”×“×£ (Audio/Video/BlastDial)
+//   - data: ×ž×¢×¨×š ×™×©×™×‘×•×ª ×ž-CMS
+//   - loading: ×”×× ×¢×“×™×™×Ÿ ×˜×•×¢×Ÿ
+//   - error: ×”×•×“×¢×ª ×©×’×™××”
 //
-// זרימת Agent Access:
-//   נבדק לפי: מדור המשתמש → access_level → סוג הישיבה
-//   audio/video/blast_dial → רואה רק ישיבות מהסוג הזה
-//   full/standard → רואה הכל, restricted → לא רואה כלום
+// ×–×¨×™×ž×ª Agent Access:
+//   × ×‘×“×§ ×œ×¤×™: ×ž×“×•×¨ ×”×ž×©×ª×ž×© â†’ access_level â†’ ×¡×•×’ ×”×™×©×™×‘×”
+//   audio/video/blast_dial â†’ ×¨×•××” ×¨×§ ×™×©×™×‘×•×ª ×ž×”×¡×•×’ ×”×–×”
+//   full/standard â†’ ×¨×•××” ×”×›×œ, restricted â†’ ×œ× ×¨×•××” ×›×œ×•×
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { cmsAPI, madorAPI, meetingAPI } from "../services/api";
+import { cmsAPI, groupAPI, meetingAPI } from "../services/api";
 
-// מספר ישיבות בכל עמוד
+// ×ž×¡×¤×¨ ×™×©×™×‘×•×ª ×‘×›×œ ×¢×ž×•×“
 const PAGE_SIZE = 5;
 
 export default function MeetingsPage({ title, data, loading = false, error = "" }) {
   const { userRole, currentUser } = useAuth();
-  const canManageMeetings = userRole === "super_admin"; // רק super_admin יכול ליצור/למחוק
-  const [query, setQuery] = useState("");           // טקסט חיפוש שהמשתמש מקליד
-  const [submittedQuery, setSubmittedQuery] = useState(""); // טקסט חיפוש שנשלח (אחרי Enter/לחיצה)
+  const canManageMeetings = userRole === "super_admin"; // ×¨×§ super_admin ×™×›×•×œ ×œ×™×¦×•×¨/×œ×ž×—×•×§
+  const [query, setQuery] = useState("");           // ×˜×§×¡×˜ ×—×™×¤×•×© ×©×”×ž×©×ª×ž×© ×ž×§×œ×™×“
+  const [submittedQuery, setSubmittedQuery] = useState(""); // ×˜×§×¡×˜ ×—×™×¤×•×© ×©× ×©×œ×— (××—×¨×™ Enter/×œ×—×™×¦×”)
   const [searchBy, setSearchBy] = useState("meetingId");
   const [page, setPage] = useState(1);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -56,12 +56,12 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
   const [deletedCmsIds, setDeletedCmsIds] = useState([]);
   const [deletedDbIds, setDeletedDbIds] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
-  const [availableMadors, setAvailableMadors] = useState([]);
+  const [availableGroups, setAvailableGroups] = useState([]);
   const [cmsDetailsByMeetingId, setCmsDetailsByMeetingId] = useState({});
   const cmsFetchInFlightRef = useRef(new Set());
   const [newMeeting, setNewMeeting] = useState({
     meetingId: "",
-    madorId: "",
+    groupId: "",
   });
 
   const visibleCmsMeetings = useMemo(
@@ -82,9 +82,9 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     [allMeetings, cmsDetailsByMeetingId]
   );
 
-  // --- פונקציות עזר לזיהוי סוג ישיבה ---
+  // --- ×¤×•× ×§×¦×™×•×ª ×¢×–×¨ ×œ×–×™×”×•×™ ×¡×•×’ ×™×©×™×‘×” ---
 
-  // מזהה סוג ישיבה לפי prefix של מספר (89=audio, 77=video, 55=blast_dial)
+  // ×ž×–×”×” ×¡×•×’ ×™×©×™×‘×” ×œ×¤×™ prefix ×©×œ ×ž×¡×¤×¨ (89=audio, 77=video, 55=blast_dial)
   const inferMeetingTypeById = (meetingId) => {
     const text = String(meetingId || "");
     if (text.startsWith("89")) return "audio";
@@ -98,32 +98,32 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     return "audio";
   };
 
-  // --- בקרת גישה ל-Agent ---
+  // --- ×‘×§×¨×ª ×’×™×©×” ×œ-Agent ---
 
-  // מחזיר את כל רמות הגישה של ה-agent למדור של הישיבה
+  // ×ž×—×–×™×¨ ××ª ×›×œ ×¨×ž×•×ª ×”×’×™×©×” ×©×œ ×”-agent ×œ×ž×“×•×¨ ×©×œ ×”×™×©×™×‘×”
   const getAgentAccessLevelsForMeeting = (meeting) => {
     const meetingGroup = (meeting.group || "").toLowerCase().trim();
-    const matchingMador = (currentUser?.madors || []).find(
-      (mador) => (mador.name || "").toLowerCase().trim() === meetingGroup
+    const matchingGroup = (currentUser?.groups || []).find(
+      (group) => (group.name || "").toLowerCase().trim() === meetingGroup
     );
 
-    if (!matchingMador || !currentUser?.UUID) {
+    if (!matchingGroup || !currentUser?.UUID) {
       return [];
     }
 
-    return (matchingMador.member_access_levels || [])
+    return (matchingGroup.member_access_levels || [])
       .filter((row) => String(row.user_id) === String(currentUser.UUID))
       .map((row) => String(row.access_level || "").toLowerCase().trim())
       .filter(Boolean);
   };
 
-  // בודק אם ל-agent יש גישה לישיבה מסוימת לפי access_level
+  // ×‘×•×“×§ ×× ×œ-agent ×™×© ×’×™×©×” ×œ×™×©×™×‘×” ×ž×¡×•×™×ž×ª ×œ×¤×™ access_level
   const canAgentAccessMeeting = (meeting) => {
-    const memberMadors = (currentUser?.madors || []).map((mador) =>
-      (mador.name || "").toLowerCase().trim()
+    const memberGroups = (currentUser?.groups || []).map((group) =>
+      (group.name || "").toLowerCase().trim()
     );
     const meetingGroup = (meeting.group || "").toLowerCase().trim();
-    if (!memberMadors.includes(meetingGroup)) {
+    if (!memberGroups.includes(meetingGroup)) {
       return false;
     }
 
@@ -132,7 +132,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
       .toLowerCase()
       .trim();
 
-    // Strict permission model: only exact types granted in the mador are visible.
+    // Strict permission model: only exact types granted in the group are visible.
     if (!["audio", "video", "blast_dial"].includes(meetingType)) {
       return false;
     }
@@ -140,15 +140,15 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     return accessLevels.includes(meetingType);
   };
 
-  // --- סינון ישיבות לפי הרשאות ---
-  // admin/super_admin רואים הכל, agent רואה רק מה שמותר לו
+  // --- ×¡×™× ×•×Ÿ ×™×©×™×‘×•×ª ×œ×¤×™ ×”×¨×©××•×ª ---
+  // admin/super_admin ×¨×•××™× ×”×›×œ, agent ×¨×•××” ×¨×§ ×ž×” ×©×ž×•×ª×¨ ×œ×•
   const visibleMeetings = useMemo(() => {
     if (userRole === "super_admin" || userRole === "admin") {
       return meetingsWithCmsDetails;
     }
 
     if (userRole === "agent" || userRole === "viewer") {
-      // For member roles, backend endpoints already enforce mador membership + access-level rules.
+      // For member roles, backend endpoints already enforce group membership + access-level rules.
       // Avoid client-side over-filtering based on partial auth payload.
       return meetingsWithCmsDetails;
     }
@@ -156,7 +156,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     return [];
   }, [meetingsWithCmsDetails, userRole]);
 
-  // --- חיפוש לפי שדה שנבחר (meetingId/group/name) ---
+  // --- ×—×™×¤×•×© ×œ×¤×™ ×©×“×” ×©× ×‘×—×¨ (meetingId/group/name) ---
   const filteredMeetings = useMemo(() => {
     if (!submittedQuery.trim()) return visibleMeetings;
 
@@ -297,7 +297,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     isLocal: meeting.isLocal,
   });
 
-  // --- CMS Integration: טעינת פרטים נוספים מ-CMS ---
+  // --- CMS Integration: ×˜×¢×™× ×ª ×¤×¨×˜×™× × ×•×¡×¤×™× ×ž-CMS ---
 
   const loadCmsMeetingWithRetry = async (meetingId, options = {}) => {
     const key = String(meetingId || "").trim();
@@ -372,7 +372,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     setNewMeeting((prev) => ({ ...prev, [name]: value }));
   };
 
-  // --- יצירת ישיבה חדשה (DB + CMS) ---
+  // --- ×™×¦×™×¨×ª ×™×©×™×‘×” ×—×“×©×” (DB + CMS) ---
   const handleCreateLocalMeeting = (e) => {
     e.preventDefault();
     setCreateError("");
@@ -394,13 +394,13 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
       return;
     }
 
-    if (!newMeeting.madorId) {
-      setCreateError("Please select a mador.");
+    if (!newMeeting.groupId) {
+      setCreateError("Please select a group.");
       return;
     }
 
-    const chosenMador = availableMadors.find(
-      (mador) => String(mador.id || mador.UUID) === String(newMeeting.madorId)
+    const chosenGroup = availableGroups.find(
+      (group) => String(group.id || group.UUID) === String(newMeeting.groupId)
     );
 
     const createInDb = async () => {
@@ -412,12 +412,12 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
         };
         const dbResponse = await meetingAPI.createMeeting(payload);
         const saved = dbResponse.data;
-        await madorAPI.addMeeting(newMeeting.madorId, saved.UUID);
+        await groupAPI.addMeeting(newMeeting.groupId, saved.UUID);
 
         const createdCmsResponse = await cmsAPI.createMeeting({
           meetingId: meetingIdText,
           type: inferMeetingType(),
-          group: chosenMador?.name || "Unassigned",
+          group: chosenGroup?.name || "Unassigned",
           name: `Meeting ${meetingIdText}`,
         });
         const createdCms = createdCmsResponse.data;
@@ -428,7 +428,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
           meetingId: meetingIdText,
           name: createdCms?.name || `Meeting ${meetingIdText}`,
           type: createdCms?.type || inferMeetingType(),
-          group: createdCms?.group || chosenMador?.name || "Unassigned",
+          group: createdCms?.group || chosenGroup?.name || "Unassigned",
           accessLevel: createdCms?.accessLevel || "-",
           status: createdCms?.status || "",
           participantsCount: createdCms?.participantsCount ?? 0,
@@ -444,7 +444,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
         setPage(1);
         setNewMeeting({
           meetingId: "",
-          madorId: "",
+          groupId: "",
         });
         setCreateSuccess("Meeting added to database successfully.");
 
@@ -516,7 +516,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     }
   };
 
-  // --- מחיקת ישיבה (DB או CMS) ---
+  // --- ×ž×—×™×§×ª ×™×©×™×‘×” (DB ××• CMS) ---
   const handleDeleteMeeting = async (meeting) => {
     setDeleteError("");
     setDeleteSuccess("");
@@ -551,7 +551,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
 
     const actor = {
       role: userRole,
-      ownedGroups: (currentUser?.madors || []).map((mador) => mador.name),
+      ownedGroups: (currentUser?.groups || []).map((group) => group.name),
     };
 
     try {
@@ -576,7 +576,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
     }
   };
 
-  // --- עדכון סיסמת ישיבה ב-CMS ---
+  // --- ×¢×“×›×•×Ÿ ×¡×™×¡×ž×ª ×™×©×™×‘×” ×‘-CMS ---
   const handleUpdatePassword = async () => {
     if (!selectedMeeting) {
       return;
@@ -685,21 +685,21 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
   }, [createError, createSuccess, deleteError, deleteSuccess, openError, passwordError, passwordSuccess]);
 
   useEffect(() => {
-    const loadMadors = async () => {
+    const loadGroups = async () => {
       if (userRole === "super_admin" || userRole === "admin") {
         try {
-          const response = await madorAPI.listMadors();
-          setAvailableMadors(response.data || []);
+          const response = await groupAPI.listGroups();
+          setAvailableGroups(response.data || []);
         } catch {
-          setAvailableMadors([]);
+          setAvailableGroups([]);
         }
         return;
       }
 
-      setAvailableMadors(currentUser?.madors || []);
+      setAvailableGroups(currentUser?.groups || []);
     };
 
-    loadMadors();
+    loadGroups();
   }, [userRole, currentUser]);
 
   return (
@@ -723,16 +723,16 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
 
                 <select
                   className="search-select"
-                  name="madorId"
-                  value={newMeeting.madorId}
+                  name="groupId"
+                  value={newMeeting.groupId}
                   onChange={handleLocalMeetingChange}
                 >
-                  <option value="">Select mador</option>
-                  {availableMadors.map((mador) => {
-                    const madorId = mador.id || mador.UUID;
+                  <option value="">Select group</option>
+                  {availableGroups.map((group) => {
+                    const groupId = group.id || group.UUID;
                     return (
-                      <option key={String(madorId)} value={String(madorId)}>
-                        {mador.name}
+                      <option key={String(groupId)} value={String(groupId)}>
+                        {group.name}
                       </option>
                     );
                   })}
@@ -817,7 +817,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
                     </div>
                     <div className="meeting-name">{m.name || "Unnamed meeting"}</div>
                     <div className="meeting-meta">
-                      {m.group} • Participants: {getParticipantsText(m)} • Last used: {displayLastUsed(m.lastUsedAt)}
+                      {m.group} â€¢ Participants: {getParticipantsText(m)} â€¢ Last used: {displayLastUsed(m.lastUsedAt)}
                     </div>
                   </div>
                   <div className="meeting-actions">
@@ -856,7 +856,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
               disabled={page === 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              ◀ Previous
+              â—€ Previous
             </button>
 
             <span className="pagination-info">
@@ -868,7 +868,7 @@ export default function MeetingsPage({ title, data, loading = false, error = "" 
               disabled={page === totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
-              Next ▶
+              Next â–¶
             </button>
           </div>
         </div>

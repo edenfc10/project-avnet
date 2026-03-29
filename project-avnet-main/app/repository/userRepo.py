@@ -1,43 +1,43 @@
+﻿# ============================================================================
+# UserRepository - ×©×›×‘×ª ×’×™×©×” ×œ× ×ª×•× ×™× ×©×œ ×ž×©×ª×ž×©×™×
 # ============================================================================
-# UserRepository - שכבת גישה לנתונים של משתמשים
-# ============================================================================
-# אחראית על כל פעולות הDB הקשורות למשתמשים:
-#   - יצירת משתמש (agent/admin)
-#   - שליפת משתמש לפי s_id
-#   - קבלת כל המשתמשים
-#   - מחיקת משתמש
-#   - שליפת פגישות מדור לפי רמת גישה של משתמש
+# ××—×¨××™×ª ×¢×œ ×›×œ ×¤×¢×•×œ×•×ª ×”DB ×”×§×©×•×¨×•×ª ×œ×ž×©×ª×ž×©×™×:
+#   - ×™×¦×™×¨×ª ×ž×©×ª×ž×© (agent/admin)
+#   - ×©×œ×™×¤×ª ×ž×©×ª×ž×© ×œ×¤×™ s_id
+#   - ×§×‘×œ×ª ×›×œ ×”×ž×©×ª×ž×©×™×
+#   - ×ž×—×™×§×ª ×ž×©×ª×ž×©
+#   - ×©×œ×™×¤×ª ×¤×’×™×©×•×ª ×ž×“×•×¨ ×œ×¤×™ ×¨×ž×ª ×’×™×©×” ×©×œ ×ž×©×ª×ž×©
 #
 # Pattern: Repository Pattern
-#   השכבה הזו מדברת רק עם הDB דרך SQLAlchemy.
-#   הService משתמש ברפוזיטורי ומוסיף לוגיקה עסקית.
+#   ×”×©×›×‘×” ×”×–×• ×ž×“×‘×¨×ª ×¨×§ ×¢× ×”DB ×“×¨×š SQLAlchemy.
+#   ×”Service ×ž×©×ª×ž×© ×‘×¨×¤×•×–×™×˜×•×¨×™ ×•×ž×•×¡×™×£ ×œ×•×’×™×§×” ×¢×¡×§×™×ª.
 # ============================================================================
 
 import uuid
 
 from .base import BaseRepository
 from app.models.user import User
-from app.models.mador import Mador
+from app.models.group import Group
 
 from app.schema.user import UserInCreate, UserInCreateNoRole, UserOutput
-from app.models.member_mador_access import MemberMadorAccess, MemberMadorAccessLevel
+from app.models.member_group_access import MemberGroupAccess, MemberGroupAccessLevel
 
 
 class UserRepository(BaseRepository):
 
     def create_user(self, user_data: UserInCreate) -> UserOutput:
-        """  יוצר משתמש חדש בDB ומשייך אותו למדורים אם צוינו """
+        """  ×™×•×¦×¨ ×ž×©×ª×ž×© ×—×“×© ×‘DB ×•×ž×©×™×™×š ××•×ª×• ×œ×ž×“×•×¨×™× ×× ×¦×•×™× ×• """
         data = user_data.model_dump(exclude_none=True)
 
-        # מוציא את רשימת המדורים מהdata לפני יצירת היוזר
-        mador_ids = data.pop("mador_ids", [])
+        # ×ž×•×¦×™× ××ª ×¨×©×™×ž×ª ×”×ž×“×•×¨×™× ×ž×”data ×œ×¤× ×™ ×™×¦×™×¨×ª ×”×™×•×–×¨
+        group_ids = data.pop("group_ids", [])
 
         new_user = User(**data)
 
-        # אם צוינו מדורים - משייך את המשתמש אליהם
-        if mador_ids and len(mador_ids) > 0:
-            madors = self.session.query(Mador).filter(Mador.UUID.in_(mador_ids)).all()
-            new_user.madors.extend(madors)
+        # ×× ×¦×•×™× ×• ×ž×“×•×¨×™× - ×ž×©×™×™×š ××ª ×”×ž×©×ª×ž×© ××œ×™×”×
+        if group_ids and len(group_ids) > 0:
+            groups = self.session.query(Group).filter(Group.UUID.in_(group_ids)).all()
+            new_user.groups.extend(groups)
 
         self.session.add(new_user)
         self.session.commit()
@@ -46,33 +46,33 @@ class UserRepository(BaseRepository):
         return new_user
     
     def create_agent_user(self, user_data: UserInCreateNoRole):
-        """ יוצר משתמש עם תפקיד agent אוטומטית """
+        """ ×™×•×¦×¨ ×ž×©×ª×ž×© ×¢× ×ª×¤×§×™×“ agent ××•×˜×•×ž×˜×™×ª """
         data = UserInCreate(**user_data.model_dump(), role="agent").model_dump(exclude_none=True)
         return self.create_user(UserInCreate(**data))
     
     def create_admin_user(self, user_data: UserInCreateNoRole):
-        """ יוצר משתמש עם תפקיד admin אוטומטית """
+        """ ×™×•×¦×¨ ×ž×©×ª×ž×© ×¢× ×ª×¤×§×™×“ admin ××•×˜×•×ž×˜×™×ª """
         data = UserInCreate(**user_data.model_dump(), role="admin").model_dump(exclude_none=True)
         return self.create_user(UserInCreate(**data))
 
     def create_viewer_user(self, user_data: UserInCreateNoRole):
-        """ יוצר משתמש עם תפקיד viewer אוטומטית """
+        """ ×™×•×¦×¨ ×ž×©×ª×ž×© ×¢× ×ª×¤×§×™×“ viewer ××•×˜×•×ž×˜×™×ª """
         data = UserInCreate(**user_data.model_dump(), role="viewer").model_dump(exclude_none=True)
         return self.create_user(UserInCreate(**data))
     
     def get_user_by_s_id(self, s_id: str) -> UserOutput:
-        """ מוצא משתמש לפי מזהה המשתמש (s_id) """
+        """ ×ž×•×¦× ×ž×©×ª×ž×© ×œ×¤×™ ×ž×–×”×” ×”×ž×©×ª×ž×© (s_id) """
         user = self.session.query(User).filter_by(s_id=s_id).first()
         return user
 
     def get_all_users(self) -> list[UserOutput]:
-        """ מחזיר את כל המשתמשים במערכת """
+        """ ×ž×—×–×™×¨ ××ª ×›×œ ×”×ž×©×ª×ž×©×™× ×‘×ž×¢×¨×›×ª """
         users = self.session.query(User).all()
         return users
 
-    def get_users_in_same_madors(self, user_uuid: str) -> list[UserOutput]:
+    def get_users_in_same_groups(self, user_uuid: str) -> list[UserOutput]:
         """
-        מחזיר משתמשים שחולקים לפחות מדור אחד עם המשתמש הנתון.
+        ×ž×—×–×™×¨ ×ž×©×ª×ž×©×™× ×©×—×•×œ×§×™× ×œ×¤×—×•×ª ×ž×“×•×¨ ××—×“ ×¢× ×”×ž×©×ª×ž×© ×”× ×ª×•×Ÿ.
         """
         try:
             normalized_user_uuid = uuid.UUID(str(user_uuid))
@@ -83,21 +83,21 @@ class UserRepository(BaseRepository):
         if not user:
             return []
 
-        mador_ids = [m.UUID for m in user.madors]
-        if not mador_ids:
+        group_ids = [m.UUID for m in user.groups]
+        if not group_ids:
             return [user]
 
         users = (
             self.session.query(User)
-            .join(User.madors)
-            .filter(Mador.UUID.in_(mador_ids))
+            .join(User.groups)
+            .filter(Group.UUID.in_(group_ids))
             .distinct()
             .all()
         )
         return users
 
     def delete_user(self, user_id: str) -> bool:
-        """ מוחק משתמש לפי s_id. מחזיר True אם הצליח """
+        """ ×ž×•×—×§ ×ž×©×ª×ž×© ×œ×¤×™ s_id. ×ž×—×–×™×¨ True ×× ×”×¦×œ×™×— """
         user = self.session.query(User).filter_by(s_id=user_id).first()
         if user:
             self.session.delete(user)
@@ -106,19 +106,19 @@ class UserRepository(BaseRepository):
     
         return False
 
-    def get_mador_meetings_by_user_uuid(self, user_uuid: str, mador_uuid: str) -> list[str]:
+    def get_group_meetings_by_user_uuid(self, user_uuid: str, group_uuid: str) -> list[str]:
         """
-        מחזיר רשימת הפגישות שמשתמש רשאי לראות במדור מסוים.
-        הלוגיקה:
-          1. שולף את רמות הגישה של המשתמש במדור מטבלת member_mador_access
-          2. מסנן את כל הפגישות שה-accessLevel שלהן תואם לרמת הגישה
-        זה מאפשר לסוכן agent לראות רק פגישות שהוא הורשה לראות.
+        ×ž×—×–×™×¨ ×¨×©×™×ž×ª ×”×¤×’×™×©×•×ª ×©×ž×©×ª×ž×© ×¨×©××™ ×œ×¨××•×ª ×‘×ž×“×•×¨ ×ž×¡×•×™×.
+        ×”×œ×•×’×™×§×”:
+          1. ×©×•×œ×£ ××ª ×¨×ž×•×ª ×”×’×™×©×” ×©×œ ×”×ž×©×ª×ž×© ×‘×ž×“×•×¨ ×ž×˜×‘×œ×ª member_group_access
+          2. ×ž×¡× ×Ÿ ××ª ×›×œ ×”×¤×’×™×©×•×ª ×©×”-accessLevel ×©×œ×”×Ÿ ×ª×•×× ×œ×¨×ž×ª ×”×’×™×©×”
+        ×–×” ×ž××¤×©×¨ ×œ×¡×•×›×Ÿ agent ×œ×¨××•×ª ×¨×§ ×¤×’×™×©×•×ª ×©×”×•× ×”×•×¨×©×” ×œ×¨××•×ª.
         """
-        # שליפת הקשרים של המשתמש במדור הנתון
-        connections = self.session.query(MemberMadorAccess).filter(MemberMadorAccess.member_uuid == user_uuid, MemberMadorAccess.mador_uuid == mador_uuid).all()
-        # יצירת רשימת רמות הגישה המותרות
+        # ×©×œ×™×¤×ª ×”×§×©×¨×™× ×©×œ ×”×ž×©×ª×ž×© ×‘×ž×“×•×¨ ×”× ×ª×•×Ÿ
+        connections = self.session.query(MemberGroupAccess).filter(MemberGroupAccess.member_uuid == user_uuid, MemberGroupAccess.group_uuid == group_uuid).all()
+        # ×™×¦×™×¨×ª ×¨×©×™×ž×ª ×¨×ž×•×ª ×”×’×™×©×” ×”×ž×•×ª×¨×•×ª
         access_allowed = [conn.access_level for conn in connections]
 
-        # סינון פגישות - מחזיר רק פגישות שהסוג שלהן תואם לרמת הגישה
-        meetings = self.session.query(Mador).filter(Mador.UUID == mador_uuid).first().meetings
+        # ×¡×™× ×•×Ÿ ×¤×’×™×©×•×ª - ×ž×—×–×™×¨ ×¨×§ ×¤×’×™×©×•×ª ×©×”×¡×•×’ ×©×œ×”×Ÿ ×ª×•×× ×œ×¨×ž×ª ×”×’×™×©×”
+        meetings = self.session.query(Group).filter(Group.UUID == group_uuid).first().meetings
         return [str(meeting.UUID) for meeting in meetings if meeting.accessLevel in access_allowed]

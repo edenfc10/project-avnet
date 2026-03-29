@@ -1,13 +1,13 @@
+﻿// ============================================================================
+// Blastdial Meetings Page - ×“×£ ×™×©×™×‘×•×ª ×‘×œ××¡×˜×“×™×™×œ
 // ============================================================================
-// Blastdial Meetings Page - דף ישיבות בלאסטדייל
-// ============================================================================
-// זהה ל-AudioMeetings אבל מסנן לפי סוג "blast_dial".
-// מעביר את הנתונים ל-MeetingsPage הגנרי.
+// ×–×”×” ×œ-AudioMeetings ××‘×œ ×ž×¡× ×Ÿ ×œ×¤×™ ×¡×•×’ "blast_dial".
+// ×ž×¢×‘×™×¨ ××ª ×”× ×ª×•× ×™× ×œ-MeetingsPage ×”×’× ×¨×™.
 // ============================================================================
 
 import { useEffect, useState } from "react";
 import MeetingsPage from "../components/MeetingsPage";
-import { madorAPI, meetingAPI } from "../services/api";
+import { groupAPI, meetingAPI } from "../services/api";
 
 const inferTypeFromMeetingId = (meetingId) => {
   const text = String(meetingId || "");
@@ -36,13 +36,13 @@ export default function BlastdialMeetings() {
         setLoading(true);
         setError("");
 
-        const response = await madorAPI.listMadors();
-        const madors = response.data || [];
+        const response = await groupAPI.listGroups();
+        const groups = response.data || [];
 
         const dbMeetings = (
           await Promise.all(
-            madors.flatMap((mador) =>
-              (mador.meetings || []).map(async (meetingRef) => {
+            groups.flatMap((group) =>
+              (group.meetings || []).map(async (meetingRef) => {
                 if (meetingRef && typeof meetingRef === "object" && meetingRef.UUID) {
                   return {
                     id: `db-${meetingRef.UUID}`,
@@ -50,7 +50,7 @@ export default function BlastdialMeetings() {
                     meetingId: String(meetingRef.m_number || ""),
                     accessLevel: meetingRef.accessLevel || "",
                     password: meetingRef.password || "",
-                    group: mador.name || "Unassigned",
+                    group: group.name || "Unassigned",
                     status: "",
                   };
                 }
@@ -69,7 +69,7 @@ export default function BlastdialMeetings() {
                     meetingId: String(meeting.m_number || ""),
                     accessLevel: meeting.accessLevel || "",
                     password: meeting.password || "",
-                    group: mador.name || "Unassigned",
+                    group: group.name || "Unassigned",
                     status: "",
                   };
                 } catch {

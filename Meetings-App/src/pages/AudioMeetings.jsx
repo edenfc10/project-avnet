@@ -1,7 +1,15 @@
+﻿// ============================================================================
+// Audio Meetings Page - ×“×£ ×™×©×™×‘×•×ª ××•×“×™×•
+// ============================================================================
+// ×˜×•×¢×Ÿ ××ª ×›×œ ×”×ž×“×•×¨×™×, ×©×•×œ×£ ×ž×”× ××ª ×”×¤×’×™×©×•×ª, ×•×ž×¡× ×Ÿ ×¨×§ ×¤×’×™×©×•×ª ×ž×¡×•×’ audio.
+// ×”×§×•×ž×¤×•× × ×˜×” ×ž×©×ª×ž×©×ª ×‘-MeetingsPage ×›×“×™ ×œ×”×¦×™×’ ××ª ×”×¨×©×™×ž×” ×‘×¤×•×¨×ž×˜ ××—×™×“.
+// ============================================================================
+
 import { useEffect, useState } from "react";
 import MeetingsPage from "../components/MeetingsPage";
-import { madorAPI, meetingAPI } from "../services/api";
+import { groupAPI, meetingAPI } from "../services/api";
 
+// Fallback helper for older records where the meeting type is inferred by number prefix.
 const inferTypeFromMeetingId = (meetingId) => {
   const text = String(meetingId || "");
   if (text.startsWith("89")) return "audio";
@@ -10,6 +18,7 @@ const inferTypeFromMeetingId = (meetingId) => {
   return "unknown";
 };
 
+// Prefers explicit access/type fields and falls back to meeting number inference.
 const inferTypeFromMeeting = (meeting) => {
   const accessLevel = String(meeting?.accessLevel || meeting?.type || "").toLowerCase();
   if (accessLevel === "audio" || accessLevel === "video" || accessLevel === "blast_dial") {
@@ -24,18 +33,19 @@ export default function AudioMeetings() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Loads meetings through groups so each row can keep its source group name.
     const loadMeetings = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const response = await madorAPI.listMadors();
-        const madors = response.data || [];
+        const response = await groupAPI.listGroups();
+        const groups = response.data || [];
 
         const dbMeetings = (
           await Promise.all(
-            madors.flatMap((mador) =>
-              (mador.meetings || []).map(async (meetingRef) => {
+            groups.flatMap((group) =>
+              (group.meetings || []).map(async (meetingRef) => {
                 if (meetingRef && typeof meetingRef === "object" && meetingRef.UUID) {
                   return {
                     id: `db-${meetingRef.UUID}`,
@@ -43,7 +53,7 @@ export default function AudioMeetings() {
                     meetingId: String(meetingRef.m_number || ""),
                     accessLevel: meetingRef.accessLevel || "",
                     password: meetingRef.password || "",
-                    group: mador.name || "Unassigned",
+                    group: group.name || "Unassigned",
                     status: "",
                   };
                 }
@@ -62,7 +72,7 @@ export default function AudioMeetings() {
                     meetingId: String(meeting.m_number || ""),
                     accessLevel: meeting.accessLevel || "",
                     password: meeting.password || "",
-                    group: mador.name || "Unassigned",
+                    group: group.name || "Unassigned",
                     status: "",
                   };
                 } catch {

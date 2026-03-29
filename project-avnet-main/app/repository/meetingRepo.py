@@ -1,28 +1,28 @@
+﻿# ============================================================================
+# MeetingRepository - ×©×›×‘×ª ×’×™×©×” ×œ× ×ª×•× ×™× ×©×œ ×¤×’×™×©×•×ª
 # ============================================================================
-# MeetingRepository - שכבת גישה לנתונים של פגישות
-# ============================================================================
-# אחראית על כל פעולות הDB הקשורות לפגישות:
-#   - CRUD מלא (create/read/update/delete)
-#   - חיפוש לפי UUID, מספר פגישה, או מדור
-#   - עדכון לפי UUID או לפי מספר פגישה
+# ××—×¨××™×ª ×¢×œ ×›×œ ×¤×¢×•×œ×•×ª ×”DB ×”×§×©×•×¨×•×ª ×œ×¤×’×™×©×•×ª:
+#   - CRUD ×ž×œ× (create/read/update/delete)
+#   - ×—×™×¤×•×© ×œ×¤×™ UUID, ×ž×¡×¤×¨ ×¤×’×™×©×”, ××• ×ž×“×•×¨
+#   - ×¢×“×›×•×Ÿ ×œ×¤×™ UUID ××• ×œ×¤×™ ×ž×¡×¤×¨ ×¤×’×™×©×”
 # ============================================================================
 
 import uuid
 
 from .base import BaseRepository
 from app.models.user import User
-from app.models.mador import Mador
+from app.models.group import Group
 
 from app.schema.user import UserInCreate, UserInCreateNoRole, UserOutput
 from app.schema.meeting import MeetingInCreate, MeetingInUpdate, MeetingOutput
 from app.models.meeting import Meeting
-from app.models.member_mador_access import MemberMadorAccess
+from app.models.member_group_access import MemberGroupAccess
 
 
 class MeetingRepository(BaseRepository):
 
     def create_meeting(self, meeting_data: MeetingInCreate) -> MeetingOutput:
-        """ יוצר פגישה חדשה בDB """
+        """ ×™×•×¦×¨ ×¤×’×™×©×” ×—×“×©×” ×‘DB """
         data = meeting_data.model_dump(exclude_none=True)
 
         new_meeting = Meeting(**data)
@@ -35,7 +35,7 @@ class MeetingRepository(BaseRepository):
     
     
     def delete_meeting(self, meeting_uuid: str) -> bool:
-        """ מוחק פגישה לפי UUID. מחזיר True אם הצליח """
+        """ ×ž×•×—×§ ×¤×’×™×©×” ×œ×¤×™ UUID. ×ž×—×–×™×¨ True ×× ×”×¦×œ×™×— """
         meeting = self.session.query(Meeting).filter(Meeting.UUID == meeting_uuid).first()
         if meeting:
             self.session.delete(meeting)
@@ -44,15 +44,15 @@ class MeetingRepository(BaseRepository):
         return False
     
     def get_meeting_by_uuid(self, meeting_uuid: str) -> MeetingOutput:
-        """ מוצא פגישה לפי UUID """
+        """ ×ž×•×¦× ×¤×’×™×©×” ×œ×¤×™ UUID """
         meeting = self.session.query(Meeting).filter(Meeting.UUID == meeting_uuid).first()
         return meeting
 
     def user_can_access_meeting(self, user_uuid: str, meeting_uuid: str, user_role: str | None = None) -> bool:
         """
-        בודק האם למשתמש יש גישה לפגישה:
-        - המשתמש צריך להיות חבר בלפחות מדור אחד של הפגישה
-        - ובאותו מדור חייבת להיות לו רמת גישה שמתאימה לסוג הפגישה
+        ×‘×•×“×§ ×”×× ×œ×ž×©×ª×ž×© ×™×© ×’×™×©×” ×œ×¤×’×™×©×”:
+        - ×”×ž×©×ª×ž×© ×¦×¨×™×š ×œ×”×™×•×ª ×—×‘×¨ ×‘×œ×¤×—×•×ª ×ž×“×•×¨ ××—×“ ×©×œ ×”×¤×’×™×©×”
+        - ×•×‘××•×ª×• ×ž×“×•×¨ ×—×™×™×‘×ª ×œ×”×™×•×ª ×œ×• ×¨×ž×ª ×’×™×©×” ×©×ž×ª××™×ž×” ×œ×¡×•×’ ×”×¤×’×™×©×”
         """
         try:
             normalized_user_uuid = uuid.UUID(str(user_uuid))
@@ -67,24 +67,24 @@ class MeetingRepository(BaseRepository):
         if not user:
             return False
 
-        # בדיקת חברות במדור
-        user_mador_uuids = {m.UUID for m in user.madors}
+        # ×‘×“×™×§×ª ×—×‘×¨×•×ª ×‘×ž×“×•×¨
+        user_group_uuids = {m.UUID for m in user.groups}
 
-        # viewer רואה כל פגישה במדורים שלו (לא לפי access_level מדויק)
+        # viewer ×¨×•××” ×›×œ ×¤×’×™×©×” ×‘×ž×“×•×¨×™× ×©×œ×• (×œ× ×œ×¤×™ access_level ×ž×“×•×™×§)
         if user_role == "viewer":
-            return any(mador.UUID in user_mador_uuids for mador in meeting.madors)
+            return any(group.UUID in user_group_uuids for group in meeting.groups)
 
         meeting_level = getattr(meeting.accessLevel, "value", meeting.accessLevel)
         meeting_level = str(meeting_level).lower().strip()
         if meeting_level not in {"audio", "video", "blast_dial"}:
             return False
 
-        for mador in meeting.madors:
-            if mador.UUID not in user_mador_uuids:
+        for group in meeting.groups:
+            if group.UUID not in user_group_uuids:
                 continue
 
-            # בדיקת הרשאה באותו מדור
-            for access_row in mador.member_access_levels:
+            # ×‘×“×™×§×ª ×”×¨×©××” ×‘××•×ª×• ×ž×“×•×¨
+            for access_row in group.member_access_levels:
                 if access_row.member_uuid != user.UUID:
                     continue
 
@@ -96,23 +96,23 @@ class MeetingRepository(BaseRepository):
         return False
     
     def get_all_meetings(self) -> list[MeetingOutput]:
-        """ מחזיר את כל הפגישות במערכת """
+        """ ×ž×—×–×™×¨ ××ª ×›×œ ×”×¤×’×™×©×•×ª ×‘×ž×¢×¨×›×ª """
         return self.session.query(Meeting).all()
     
     def get_meeting_by_number(self, number: int) -> MeetingOutput:
-        """ מוצא פגישה לפי מספר הפגישה (m_number) """
+        """ ×ž×•×¦× ×¤×’×™×©×” ×œ×¤×™ ×ž×¡×¤×¨ ×”×¤×’×™×©×” (m_number) """
         meeting = self.session.query(Meeting).filter(Meeting.m_number == number).first()
         return meeting
     
-    def get_meetings_by_mador_uuid(self, mador_uuid: str) -> list[str]:
-        """ מחזיר רשימת UUIDs של פגישות השייכות למדור """
-        mador = self.session.query(Mador).filter(Mador.UUID == mador_uuid).first()
-        if mador:
-            return [meeting.UUID for meeting in mador.meetings]
+    def get_meetings_by_group_uuid(self, group_uuid: str) -> list[str]:
+        """ ×ž×—×–×™×¨ ×¨×©×™×ž×ª UUIDs ×©×œ ×¤×’×™×©×•×ª ×”×©×™×™×›×•×ª ×œ×ž×“×•×¨ """
+        group = self.session.query(Group).filter(Group.UUID == group_uuid).first()
+        if group:
+            return [meeting.UUID for meeting in group.meetings]
         return []
     
     def update_meeting_by_number(self, meeting_number: str, meeting_data: MeetingInUpdate) -> MeetingOutput:
-        """ מעדכן פגישה לפי מספר - רק שדות שנשלחו """
+        """ ×ž×¢×“×›×Ÿ ×¤×’×™×©×” ×œ×¤×™ ×ž×¡×¤×¨ - ×¨×§ ×©×“×•×ª ×©× ×©×œ×—×• """
         meeting = self.session.query(Meeting).filter(Meeting.m_number == meeting_number).first()
         if not meeting:
             return None
@@ -125,7 +125,7 @@ class MeetingRepository(BaseRepository):
         return meeting
     
     def update_meeting_by_uuid(self, meeting_uuid: str, meeting_data: MeetingInUpdate) -> MeetingOutput:
-        """ מעדכן פגישה לפי UUID - רק שדות שנשלחו """
+        """ ×ž×¢×“×›×Ÿ ×¤×’×™×©×” ×œ×¤×™ UUID - ×¨×§ ×©×“×•×ª ×©× ×©×œ×—×• """
         meeting = self.session.query(Meeting).filter(Meeting.UUID == meeting_uuid).first()
         if not meeting:
             return None

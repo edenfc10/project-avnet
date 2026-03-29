@@ -1,10 +1,10 @@
+﻿# ============================================================================
+# MeetingService - ×©×›×‘×ª ×œ×•×’×™×§×” ×¢×¡×§×™×ª ×œ×¤×’×™×©×•×ª
 # ============================================================================
-# MeetingService - שכבת לוגיקה עסקית לפגישות
-# ============================================================================
-# השכבה הזו מכילה את כל הלוגיקה העסקית שקשורה לפגישות:
-#   - CRUD מלא: יצירה, קריאה, עדכון, מחיקה
-#   - חיפוש לפי UUID, מספר, או מדור
-#   - המרה לפורמט פלט: _to_output ממיר ORM ל-Pydantic
+# ×”×©×›×‘×” ×”×–×• ×ž×›×™×œ×” ××ª ×›×œ ×”×œ×•×’×™×§×” ×”×¢×¡×§×™×ª ×©×§×©×•×¨×” ×œ×¤×’×™×©×•×ª:
+#   - CRUD ×ž×œ×: ×™×¦×™×¨×”, ×§×¨×™××”, ×¢×“×›×•×Ÿ, ×ž×—×™×§×”
+#   - ×—×™×¤×•×© ×œ×¤×™ UUID, ×ž×¡×¤×¨, ××• ×ž×“×•×¨
+#   - ×”×ž×¨×” ×œ×¤×•×¨×ž×˜ ×¤×œ×˜: _to_output ×ž×ž×™×¨ ORM ×œ-Pydantic
 # ============================================================================
 
 from typing import Dict
@@ -12,11 +12,11 @@ from typing import Dict
 from sqlalchemy import String
 
 from app.models.user import User
-from app.repository.madorRepo import MadorRepository
+from app.repository.groupRepo import GroupRepository
 from app.repository.meetingRepo import MeetingRepository
-from app.schema.user import MadorInCreate, MadorOutput, UserInCreateNoRole, UserJWTData, UserOutput, UserInCreate, UserInLogin, UserToken, UserWithToken
+from app.schema.user import GroupInCreate, GroupOutput, UserInCreateNoRole, UserJWTData, UserOutput, UserInCreate, UserInLogin, UserToken, UserWithToken
 from app.schema.meeting import MeetingInCreate, MeetingInUpdate, MeetingOutput
-from app.schema.user import MadorInCreate, MadorOutput, UserInCreateNoRole, UserJWTData, UserOutput, UserInCreate, UserInLogin, UserToken, UserWithToken
+from app.schema.user import GroupInCreate, GroupOutput, UserInCreateNoRole, UserJWTData, UserOutput, UserInCreate, UserInLogin, UserToken, UserWithToken
 from app.security.hashHelper import HashHelp
 from app.security.auth import AuthHand
 from sqlalchemy.orm import Session
@@ -26,20 +26,20 @@ import uuid
 
 class MeetingService:
     def __init__(self, session):
-        self.__meetingRepository = MeetingRepository(session=session)  # מופע הרפוזיטורי
+        self.__meetingRepository = MeetingRepository(session=session)  # ×ž×•×¤×¢ ×”×¨×¤×•×–×™×˜×•×¨×™
         self.session = session
 
     def _to_output(self, meeting) -> MeetingOutput:
         """
-        ממיר ORM object של פגישה ל-Pydantic MeetingOutput.
-        ממיר את רשימת המדורים ל-UUIDs בלבד.
+        ×ž×ž×™×¨ ORM object ×©×œ ×¤×’×™×©×” ×œ-Pydantic MeetingOutput.
+        ×ž×ž×™×¨ ××ª ×¨×©×™×ž×ª ×”×ž×“×•×¨×™× ×œ-UUIDs ×‘×œ×‘×“.
         """
         return MeetingOutput(
             UUID=meeting.UUID,
             m_number=meeting.m_number,
             accessLevel=meeting.accessLevel,
             password=getattr(meeting, "password", None),
-            madors=[m.UUID for m in meeting.madors],
+            groups=[m.UUID for m in meeting.groups],
         )
 
     def create_meeting(self, meeting_data: MeetingInCreate) -> MeetingOutput:
@@ -56,9 +56,9 @@ class MeetingService:
 
     def get_meeting_by_uuid_for_user(self, meeting_uuid: str, user_uuid: str, user_role: str) -> MeetingOutput:
         """
-        מחזיר פגישה בודדת לפי המשתמש המחובר:
-        - admin/super_admin: גישה מלאה
-        - agent/viewer: רק אם יש גישה לפי מדור + access level
+        ×ž×—×–×™×¨ ×¤×’×™×©×” ×‘×•×“×“×ª ×œ×¤×™ ×”×ž×©×ª×ž×© ×”×ž×—×•×‘×¨:
+        - admin/super_admin: ×’×™×©×” ×ž×œ××”
+        - agent/viewer: ×¨×§ ×× ×™×© ×’×™×©×” ×œ×¤×™ ×ž×“×•×¨ + access level
         """
         meeting = self.__meetingRepository.get_meeting_by_uuid(meeting_uuid=meeting_uuid)
         if not meeting:
@@ -94,11 +94,11 @@ class MeetingService:
             return self._to_output(meeting)
         raise HTTPException(status_code=400, detail="Meeting is not available")
     
-    def get_meetings_by_mador_uuid(self, mador_uuid: str) -> list[str]:
-        meetings = self.__meetingRepository.get_meetings_by_mador_uuid(mador_uuid=mador_uuid)
+    def get_meetings_by_group_uuid(self, group_uuid: str) -> list[str]:
+        meetings = self.__meetingRepository.get_meetings_by_group_uuid(group_uuid=group_uuid)
         if meetings is not None:
             return meetings
-        raise HTTPException(status_code=400, detail="Mador is not available")
+        raise HTTPException(status_code=400, detail="Group is not available")
     
     def update_meeting_by_number(self, meeting_number: str, meeting_data: MeetingInUpdate) -> MeetingOutput:
         meeting = self.__meetingRepository.update_meeting_by_number(meeting_number=meeting_number, meeting_data=meeting_data)

@@ -1,16 +1,16 @@
-
+﻿
 # ============================================================================
-# UserService - שכבת לוגיקה עסקית למשתמשים
+# UserService - ×©×›×‘×ª ×œ×•×’×™×§×” ×¢×¡×§×™×ª ×œ×ž×©×ª×ž×©×™×
 # ============================================================================
-# השכבה הזו מכילה את כל הלוגיקה העסקית שקשורה למשתמשים:
-#   - התחברות (login): אימות סיסמה, יצירת JWT
-#   - יצירת משתמש: הצפנת סיסמה, הגדרת תפקיד
-#   - מחיקת משתמש: בדיקות הרשאות (מי יכול למחוק מי)
-#   - שליפת פגישות מדור לפי רמת גישה של המשתמש
+# ×”×©×›×‘×” ×”×–×• ×ž×›×™×œ×” ××ª ×›×œ ×”×œ×•×’×™×§×” ×”×¢×¡×§×™×ª ×©×§×©×•×¨×” ×œ×ž×©×ª×ž×©×™×:
+#   - ×”×ª×—×‘×¨×•×ª (login): ××™×ž×•×ª ×¡×™×¡×ž×”, ×™×¦×™×¨×ª JWT
+#   - ×™×¦×™×¨×ª ×ž×©×ª×ž×©: ×”×¦×¤× ×ª ×¡×™×¡×ž×”, ×”×’×“×¨×ª ×ª×¤×§×™×“
+#   - ×ž×—×™×§×ª ×ž×©×ª×ž×©: ×‘×“×™×§×•×ª ×”×¨×©××•×ª (×ž×™ ×™×›×•×œ ×œ×ž×—×•×§ ×ž×™)
+#   - ×©×œ×™×¤×ª ×¤×’×™×©×•×ª ×ž×“×•×¨ ×œ×¤×™ ×¨×ž×ª ×’×™×©×” ×©×œ ×”×ž×©×ª×ž×©
 #
 # Pattern: Service Layer
-#   הService מתווך בין הRouter (הAPI) לבין הRepository (הDB).
-#   מוסיף לוגיקה עסקית כמו הצפנת סיסמאות, בדיקות הרשאות, ופורמט פלט.
+#   ×”Service ×ž×ª×•×•×š ×‘×™×Ÿ ×”Router (×”API) ×œ×‘×™×Ÿ ×”Repository (×”DB).
+#   ×ž×•×¡×™×£ ×œ×•×’×™×§×” ×¢×¡×§×™×ª ×›×ž×• ×”×¦×¤× ×ª ×¡×™×¡×ž××•×ª, ×‘×“×™×§×•×ª ×”×¨×©××•×ª, ×•×¤×•×¨×ž×˜ ×¤×œ×˜.
 # ============================================================================
 
 from typing import Dict
@@ -29,44 +29,44 @@ import uuid
 
 class UserService:
     def __init__(self, session):
-        self.__userRepository = UserRepository(session=session)  # יוצר מופע של הרפוזיטורי
+        self.__userRepository = UserRepository(session=session)  # ×™×•×¦×¨ ×ž×•×¤×¢ ×©×œ ×”×¨×¤×•×–×™×˜×•×¨×™
         self.session = session
     
     def login(self, login_details: UserInLogin) -> UserToken:
         """
-        תהליך התחברות:
-        1. בודק אם המשתמש קיים לפי s_id
-        2. משווה סיסמה מול hash בDB (Argon2)
-        3. יוצר JWT token עם פרטי המשתמש
-        4. מחזיר token + role
+        ×ª×”×œ×™×š ×”×ª×—×‘×¨×•×ª:
+        1. ×‘×•×“×§ ×× ×”×ž×©×ª×ž×© ×§×™×™× ×œ×¤×™ s_id
+        2. ×ž×©×•×•×” ×¡×™×¡×ž×” ×ž×•×œ hash ×‘DB (Argon2)
+        3. ×™×•×¦×¨ JWT token ×¢× ×¤×¨×˜×™ ×”×ž×©×ª×ž×©
+        4. ×ž×—×–×™×¨ token + role
         """
         user = self.__userRepository.get_user_by_s_id(s_id=login_details.s_id)
-        if not user:  # בדיקה אם המשתמש קיים בDB
+        if not user:  # ×‘×“×™×§×” ×× ×”×ž×©×ª×ž×© ×§×™×™× ×‘DB
             raise HTTPException(status_code=400, detail="Please create an Account")
 
-        # השוואת הסיסמה מול הhash השמור בDB
+        # ×”×©×•×•××ª ×”×¡×™×¡×ž×” ×ž×•×œ ×”hash ×”×©×ž×•×¨ ×‘DB
         if HashHelp.verify_password(
             plain_password=login_details.password, hashed_password=user.password
         ):
-            # יצירת טוקן JWT עם פרטי המשתמש (UUID, role, s_id)
+            # ×™×¦×™×¨×ª ×˜×•×§×Ÿ JWT ×¢× ×¤×¨×˜×™ ×”×ž×©×ª×ž×© (UUID, role, s_id)
             jwt_data = UserJWTData(UUID=str(user.UUID), role=user.role, s_id=user.s_id)
             token = AuthHand.sign_jwt(jwt_data=jwt_data)
             if token:
-                return UserToken(token=token, role=user.role)  # החזרת הטוקן והתפקיד
+                return UserToken(token=token, role=user.role)  # ×”×—×–×¨×ª ×”×˜×•×§×Ÿ ×•×”×ª×¤×§×™×“
             raise HTTPException(status_code=500, detail="Unable to process request")
         raise HTTPException(status_code=400, detail="Please check your Credentials")
 
     def _role_value(self, role) -> str:
-        """ עוזר - מחזיר את הערך הטקסטואלי של תפקיד (בין אם זה Enum או string) """
+        """ ×¢×•×–×¨ - ×ž×—×–×™×¨ ××ª ×”×¢×¨×š ×”×˜×§×¡×˜×•××œ×™ ×©×œ ×ª×¤×§×™×“ (×‘×™×Ÿ ×× ×–×” Enum ××• string) """
         return getattr(role, "value", role)
     
     def get_all_users(self, current_user_role: str, current_user_uuid: str | None = None) -> list[UserOutput]:
         """
-        מחזיר את כל המשתמשים.
-        אם המשתמש הנוכחי לא super_admin - מסתיר סופרים מהרשימה.
+        ×ž×—×–×™×¨ ××ª ×›×œ ×”×ž×©×ª×ž×©×™×.
+        ×× ×”×ž×©×ª×ž×© ×”× ×•×›×—×™ ×œ× super_admin - ×ž×¡×ª×™×¨ ×¡×•×¤×¨×™× ×ž×”×¨×©×™×ž×”.
         """
         if current_user_role == "viewer" and current_user_uuid:
-            users = self.__userRepository.get_users_in_same_madors(user_uuid=current_user_uuid)
+            users = self.__userRepository.get_users_in_same_groups(user_uuid=current_user_uuid)
         else:
             users = self.__userRepository.get_all_users()
         if current_user_role != "super_admin":
@@ -86,13 +86,13 @@ class UserService:
 
     def get_user_by_s_id_for_requester(self, s_id: str, requester_role: str, requester_uuid: str) -> User:
         """
-        מחזיר משתמש לפי s_id, עם הגבלת viewer:
-        viewer יכול לצפות רק במשתמשים שחולקים איתו מדור.
+        ×ž×—×–×™×¨ ×ž×©×ª×ž×© ×œ×¤×™ s_id, ×¢× ×”×’×‘×œ×ª viewer:
+        viewer ×™×›×•×œ ×œ×¦×¤×•×ª ×¨×§ ×‘×ž×©×ª×ž×©×™× ×©×—×•×œ×§×™× ××™×ª×• ×ž×“×•×¨.
         """
         user = self.get_user_by_s_id(s_id=s_id)
 
         if requester_role == "viewer":
-            group_users = self.__userRepository.get_users_in_same_madors(user_uuid=requester_uuid)
+            group_users = self.__userRepository.get_users_in_same_groups(user_uuid=requester_uuid)
             allowed_ids = {str(u.UUID) for u in group_users}
             if str(user.UUID) not in allowed_ids:
                 raise HTTPException(status_code=403, detail="Viewer can only access users in the same group")
@@ -101,10 +101,10 @@ class UserService:
     
     def delete_user(self, user_id: str, current_user_role: str, current_user_s_id: str) -> bool:
         """
-        מוחק משתמש עם בדיקות הרשאות:
-        - רק admin או super_admin יכולים למחוק
-        - לא ניתן למחוק את עצמך
-        - admin לא יכול למחוק super_admin
+        ×ž×•×—×§ ×ž×©×ª×ž×© ×¢× ×‘×“×™×§×•×ª ×”×¨×©××•×ª:
+        - ×¨×§ admin ××• super_admin ×™×›×•×œ×™× ×œ×ž×—×•×§
+        - ×œ× × ×™×ª×Ÿ ×œ×ž×—×•×§ ××ª ×¢×¦×ž×š
+        - admin ×œ× ×™×›×•×œ ×œ×ž×—×•×§ super_admin
         """
         if current_user_role not in ("admin", "super_admin"):
             raise HTTPException(status_code=403, detail="Only admin or super_admin can delete users")
@@ -123,36 +123,36 @@ class UserService:
         return self.__userRepository.delete_user(user_id=user_id)
     
     def create_agent_user(self, user_data: UserInCreateNoRole) -> UserOutput:
-        """ יוצר משתמש סוג agent - הסיסמה מוצפנת לפני שמירה """
+        """ ×™×•×¦×¨ ×ž×©×ª×ž×© ×¡×•×’ agent - ×”×¡×™×¡×ž×” ×ž×•×¦×¤× ×ª ×œ×¤× ×™ ×©×ž×™×¨×” """
         hashed_password = HashHelp.get_password_hash(plain_password=user_data.password)
         user_data.password = hashed_password
         user = self.__userRepository.create_agent_user(user_data=user_data)
-        user = UserOutput(UUID=user.UUID,s_id=user.s_id,username=user.username, role=user.role, madors=[m.UUID for m in user.madors] )
+        user = UserOutput(UUID=user.UUID,s_id=user.s_id,username=user.username, role=user.role, groups=[m.UUID for m in user.groups] )
         return user
     
     def create_admin_user(self, user_data: UserInCreateNoRole) -> UserOutput:
-        """ יוצר משתמש סוג admin - הסיסמה מוצפנת לפני שמירה """
+        """ ×™×•×¦×¨ ×ž×©×ª×ž×© ×¡×•×’ admin - ×”×¡×™×¡×ž×” ×ž×•×¦×¤× ×ª ×œ×¤× ×™ ×©×ž×™×¨×” """
         hashed_password = HashHelp.get_password_hash(plain_password=user_data.password)
         user_data.password = hashed_password
         user = self.__userRepository.create_admin_user(user_data=user_data)
-        user = UserOutput(UUID=user.UUID,s_id=user.s_id,username=user.username, role=user.role, madors=[m.UUID for m in user.madors] )
+        user = UserOutput(UUID=user.UUID,s_id=user.s_id,username=user.username, role=user.role, groups=[m.UUID for m in user.groups] )
         return user
 
     def create_viewer_user(self, user_data: UserInCreateNoRole) -> UserOutput:
-        """ יוצר משתמש סוג viewer - הסיסמה מוצפנת לפני שמירה """
+        """ ×™×•×¦×¨ ×ž×©×ª×ž×© ×¡×•×’ viewer - ×”×¡×™×¡×ž×” ×ž×•×¦×¤× ×ª ×œ×¤× ×™ ×©×ž×™×¨×” """
         hashed_password = HashHelp.get_password_hash(plain_password=user_data.password)
         user_data.password = hashed_password
         user = self.__userRepository.create_viewer_user(user_data=user_data)
-        user = UserOutput(UUID=user.UUID, s_id=user.s_id, username=user.username, role=user.role, madors=[m.UUID for m in user.madors])
+        user = UserOutput(UUID=user.UUID, s_id=user.s_id, username=user.username, role=user.role, groups=[m.UUID for m in user.groups])
         return user
     
-    def get_mador_meetings_by_user_uuid(self, user_uuid: str, mador_uuid: str) -> list[str]:
+    def get_group_meetings_by_user_uuid(self, user_uuid: str, group_uuid: str) -> list[str]:
         """
-        מחזיר רשימת פגישות שמשתמש רשאי לראות במדור.
-        מסתמך על רמת הגישה מטבלת member_mador_access.
+        ×ž×—×–×™×¨ ×¨×©×™×ž×ª ×¤×’×™×©×•×ª ×©×ž×©×ª×ž×© ×¨×©××™ ×œ×¨××•×ª ×‘×ž×“×•×¨.
+        ×ž×¡×ª×ž×š ×¢×œ ×¨×ž×ª ×”×’×™×©×” ×ž×˜×‘×œ×ª member_group_access.
         """
-        meetings = self.__userRepository.get_mador_meetings_by_user_uuid(user_uuid=user_uuid, mador_uuid=mador_uuid)
+        meetings = self.__userRepository.get_group_meetings_by_user_uuid(user_uuid=user_uuid, group_uuid=group_uuid)
         if meetings is not None:
             return meetings
         else:
-            raise HTTPException(status_code=400, detail="User or Mador is not available")
+            raise HTTPException(status_code=400, detail="User or Group is not available")

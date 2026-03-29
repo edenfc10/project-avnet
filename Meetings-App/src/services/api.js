@@ -1,5 +1,5 @@
-// ============================================================================
-// API Service - שכבת התקשורת עם השרת
+﻿// ============================================================================
+// API Service - שירות API מרכזי
 // ============================================================================
 // קובץ זה מרכז את כל קריאות ה-API של האפליקציה.
 // משתמש ב-Axios עם interceptor שמוסיף את ה-JWT token לכל בקשה.
@@ -7,7 +7,7 @@
 // מודולי API:
 //   - authAPI:    התחברות + בדיקת token (login, protected/me)
 //   - userAPI:    ניהול משתמשים (CRUD)
-//   - madorAPI:   ניהול מדורים, חברים, ישיבות
+//   - groupAPI:   ניהול מדורים, חברים, ישיבות
 //   - meetingAPI: ניהול ישיבות ב-DB
 //   - cmsAPI:     אינטגרציה עם CMS (כרגע mock מקומי)
 //
@@ -58,19 +58,19 @@ export const userAPI = {
   deleteUser: (userId) => api.delete(`/users/${userId}`),
 };
 
-// --- Mador API: ניהול מדורים, חברים וישיבות ---
-export const madorAPI = {
-  createMador: (madorData) => api.post('/madors/create', madorData),
-  listMadors: () => api.get('/madors/all'),
-  getMador: (madorId) => api.get(`/madors/${madorId}`),
-  deleteMador: (madorId) => api.delete(`/madors/${madorId}`),
-  updateMador: (madorId, madorData) => api.put(`/madors/${madorId}`, madorData),
-  addMember: (madorId, userId, accessLevel) =>
-    api.post(`/madors/${madorId}/add-member/${userId}`, null, {
+// --- Group API: ניהול מדורים, חברים וישיבות ---
+export const groupAPI = {
+  createGroup: (groupData) => api.post('/groups/create', groupData),
+  listGroups: () => api.get('/groups/all'),
+  getGroup: (groupId) => api.get(`/groups/${groupId}`),
+  deleteGroup: (groupId) => api.delete(`/groups/${groupId}`),
+  updateGroup: (groupId, groupData) => api.put(`/groups/${groupId}`, groupData),
+  addMember: (groupId, userId, accessLevel) =>
+    api.post(`/groups/${groupId}/add-member/${userId}`, null, {
       params: { access_level: accessLevel },
     }),
-  removeMember: (madorId, userId) => api.post(`/madors/${madorId}/remove-member/${userId}`),
-  addMeeting: (madorId, meetingUuid) => api.post(`/madors/${madorId}/add-meeting/${meetingUuid}`),
+  removeMember: (groupId, userId) => api.post(`/groups/${groupId}/remove-member/${userId}`),
+  addMeeting: (groupId, meetingUuid) => api.post(`/groups/${groupId}/add-meeting/${meetingUuid}`),
 };
 
 // --- Meeting API: ניהול ישיבות ב-DB ---
@@ -81,7 +81,7 @@ export const meetingAPI = {
   createMeeting: (meetingData) => api.post('/meetings/create', meetingData),
   deleteMeeting: (meetingUuid) => api.delete(`/meetings/${meetingUuid}`),
   updateMeeting: (meetingUuid, meetingData) => api.put(`/meetings/${meetingUuid}`, meetingData),
-  getMeetingsByMador: (madorUuid) => api.get(`/meetings/mador/${madorUuid}`),
+  getMeetingsByGroup: (groupUuid) => api.get(`/meetings/group/${groupUuid}`),
 };
 
 // --- CMS API: אינטגרציה עם CMS (כרגע mock מקומי, בעתיד יחליף ל-API אמיתי) ---
@@ -109,3 +109,4 @@ export const cmsAPI = {
 };
 
 export default api;
+

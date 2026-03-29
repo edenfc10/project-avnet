@@ -6,7 +6,12 @@
 # מריץ את השרת עם uvicorn בפורט 8000 עם auto-reload.
 # ============================================================================
 
+
 FROM python:3.11-slim
+
+# הגדרת אזור זמן ישראל
+ENV TZ=Asia/Jerusalem
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /app
 

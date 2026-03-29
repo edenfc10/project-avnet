@@ -1,10 +1,10 @@
+﻿# ============================================================================
+# Super Admin Bootstrap - ×™×¦×™×¨×ª ×ž× ×”×œ ×¢×œ ×‘×”×¤×¢×œ×” ×¨××©×•× ×”
 # ============================================================================
-# Super Admin Bootstrap - יצירת מנהל על בהפעלה ראשונה
-# ============================================================================
-# קובץ זה רץ בעליית האפליקציה (lifespan ב-main.py).
-# יוצר משתמש super_admin ראשוני אם הוא לא קיים.
-# פרטי החיבור נלקחים ממשתני סביבה (.env):
-#   SUPER_ADMIN_USERNAME ו-SUPER_ADMIN_PASSWORD
+# ×§×•×‘×¥ ×–×” ×¨×¥ ×‘×¢×œ×™×™×ª ×”××¤×œ×™×§×¦×™×” (lifespan ×‘-main.py).
+# ×™×•×¦×¨ ×ž×©×ª×ž×© super_admin ×¨××©×•× ×™ ×× ×”×•× ×œ× ×§×™×™×.
+# ×¤×¨×˜×™ ×”×—×™×‘×•×¨ × ×œ×§×—×™× ×ž×ž×©×ª× ×™ ×¡×‘×™×‘×” (.env):
+#   SUPER_ADMIN_USERNAME ×•-SUPER_ADMIN_PASSWORD
 # ============================================================================
 
 import jwt
@@ -13,14 +13,14 @@ import time
 import os
 import logging
 
-from app.core.database import _session_factory  # גישה ישירה ל-session factory לשימוש startup
+from app.core.database import _session_factory  # ×’×™×©×” ×™×©×™×¨×” ×œ-session factory ×œ×©×™×ž×•×© startup
 from app.security.hashHelper import HashHelp
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# קריאת פרטי הסופר אדמין ממשתני הסביבה
+# ×§×¨×™××ª ×¤×¨×˜×™ ×”×¡×•×¤×¨ ××“×ž×™×Ÿ ×ž×ž×©×ª× ×™ ×”×¡×‘×™×‘×”
 SUPER_ADMIN_USERNAME = os.getenv("SUPER_ADMIN_USERNAME")
 SUPER_ADMIN_PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD")
 
@@ -30,9 +30,9 @@ class SuperAdminTest(object):
     @staticmethod 
     def create_super_admin():
         """
-        יוצר משתמש super_admin אם הוא לא קיים.
-        רץ פעם אחת בעליית האפליקציה.
-        משתמש ב-_session_factory ישירות (לא FastAPI Depends).
+        ×™×•×¦×¨ ×ž×©×ª×ž×© super_admin ×× ×”×•× ×œ× ×§×™×™×.
+        ×¨×¥ ×¤×¢× ××—×ª ×‘×¢×œ×™×™×ª ×”××¤×œ×™×§×¦×™×”.
+        ×ž×©×ª×ž×© ×‘-_session_factory ×™×©×™×¨×•×ª (×œ× FastAPI Depends).
         """
         from app.repository.userRepo import UserRepository
         from app.schema.user import UserInCreate
@@ -46,7 +46,7 @@ class SuperAdminTest(object):
                 password=HashHelp.get_password_hash(SUPER_ADMIN_PASSWORD),
                 role="super_admin",
                 s_id=SUPER_ADMIN_USERNAME,
-                mador_ids=[],
+                group_ids=[],
         )
             user_repo.create_user(super_admin_data)
             logger.info(f"Super admin created successfully")
@@ -54,3 +54,4 @@ class SuperAdminTest(object):
             logger.info(f"Super admin {SUPER_ADMIN_USERNAME} already exists")
 
     
+

@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // App.jsx - קומפוננטת האפליקציה הראשית
 // ============================================================================
 // מכילה את:
@@ -9,23 +9,23 @@
 // מבנה הדפים:
 //   /login      - דף התחברות (ללא הגנה)
 //   /dashboard  - דף ראשי
-//   /madors     - ניהול מדורים
+//   /groups     - ניהול קבוצות
 //   /users      - ניהול משתמשים
 //   /reports    - דוחות
 //   /audio      - ישיבות אודיו
 //   /video      - ישיבות וידאו
-//   /blastdial  - ישיבות בלאסטדייל
+//   /blastdial  - ישיבות Blastdial
 //   /profile, /settings, /help - דפי העדפות
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
 import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { madorAPI } from "./services/api";
+import { groupAPI } from "./services/api";
 import "./App.css";
 
 // Pages
-import Madors from "./pages/Madors";
+import Groups from "./pages/Groups";
 import Users from "./pages/Users";
 import Reports from "./pages/Reports";
 import AudioMeetings from "./pages/AudioMeetings";
@@ -57,24 +57,24 @@ function MainLayout() {
   const navigate = useNavigate();
   const { logout, userRole, currentUser } = useAuth();
   const isAdminOrSuperAdmin = userRole === "admin" || userRole === "super_admin";
-  const [memberMadors, setMemberMadors] = useState([]);
+  const [memberGroups, setMemberGroups] = useState([]);
 
   useEffect(() => {
-    const loadMadorsForMember = async () => {
+    const loadGroupsForMember = async () => {
       if (!userRole || isAdminOrSuperAdmin) {
-        setMemberMadors([]);
+        setMemberGroups([]);
         return;
       }
 
       try {
-        const response = await madorAPI.listMadors();
-        setMemberMadors(response.data || []);
+        const response = await groupAPI.listGroups();
+        setMemberGroups(response.data || []);
       } catch {
-        setMemberMadors([]);
+        setMemberGroups([]);
       }
     };
 
-    loadMadorsForMember();
+    loadGroupsForMember();
   }, [userRole, isAdminOrSuperAdmin]);
 
   const allowedMeetingTypes = useMemo(() => {
@@ -93,8 +93,8 @@ function MainLayout() {
 
     const allowed = new Set();
     const normalizedCurrentUserId = currentUserId.toLowerCase();
-    memberMadors.forEach((mador) => {
-      (mador.member_access_levels || []).forEach((row) => {
+    memberGroups.forEach((group) => {
+      (group.member_access_levels || []).forEach((row) => {
         const rowUserId = String(row.user_id || row.userId || "").trim().toLowerCase();
         if (!rowUserId || rowUserId !== normalizedCurrentUserId) {
           return;
@@ -112,7 +112,7 @@ function MainLayout() {
     }
 
     return allowed;
-  }, [currentUser?.UUID, isAdminOrSuperAdmin, memberMadors, userRole]);
+  }, [currentUser?.UUID, isAdminOrSuperAdmin, memberGroups, userRole]);
 
   const defaultRoute = isAdminOrSuperAdmin
     ? "/dashboard"
@@ -122,7 +122,7 @@ function MainLayout() {
         ? "/blastdial"
         : allowedMeetingTypes.has("video")
           ? "/video"
-          : "/madors";
+          : "/groups";
 
   const handleLogout = () => {
     logout();
@@ -160,9 +160,9 @@ function MainLayout() {
               Dashboard
             </NavLink>
           )}
-          <NavLink to="/madors">
-            <img src={groupsIcon} className="nav-icon" alt="Madors" />
-            Madors
+          <NavLink to="/groups">
+            <img src={groupsIcon} className="nav-icon" alt="Groups" />
+            Groups
           </NavLink>
           <NavLink to="/users">
             <img src={profileIcon} className="nav-icon" alt="Users" />
@@ -223,8 +223,8 @@ function MainLayout() {
             path="/dashboard"
             element={isAdminOrSuperAdmin ? <Dashboard /> : <Navigate to={defaultRoute} replace />}
           />
-          <Route path="/madors" element={<Madors />} />
-          <Route path="/groups" element={<Navigate to="/madors" replace />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/groups" element={<Navigate to="/groups" replace />} />
           <Route path="/users" element={<Users />} />
           <Route
             path="/reports"
@@ -263,3 +263,4 @@ export default function App() {
     </Routes>
   );
 }
+

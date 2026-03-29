@@ -1,54 +1,55 @@
+﻿# ============================================================================
+# SQLAlchemy Event Listeners - ×ž××–×™× ×™ ××™×¨×•×¢×™× (×ž×•×©×‘×ª ×›×¨×’×¢)
 # ============================================================================
-# SQLAlchemy Event Listeners - מאזיני אירועים (מושבת כרגע)
-# ============================================================================
-# קובץ זה מכיל event listeners של SQLAlchemy שמושבתים (commented out).
-# הרעיון המקורי: כשמוסיפים פגישה או חבר למדור, המערכת תיצור אוטומטית
-# את רשומות הגישה בטבלת member_mador_access.
+# ×§×•×‘×¥ ×–×” ×ž×›×™×œ event listeners ×©×œ SQLAlchemy ×©×ž×•×©×‘×ª×™× (commented out).
+# ×”×¨×¢×™×•×Ÿ ×”×ž×§×•×¨×™: ×›×©×ž×•×¡×™×¤×™× ×¤×’×™×©×” ××• ×—×‘×¨ ×œ×ž×“×•×¨, ×”×ž×¢×¨×›×ª ×ª×™×¦×•×¨ ××•×˜×•×ž×˜×™×ª
+# ××ª ×¨×©×•×ž×•×ª ×”×’×™×©×” ×‘×˜×‘×œ×ª member_group_access.
 #
-# כרגע ההרשאות מנוהלות ידנית דרך ה-API (הrouter/service/repo) -
-# האדמין בוחר רמת גישה בעת הוספת חבר למדור.
+# ×›×¨×’×¢ ×”×”×¨×©××•×ª ×ž× ×•×”×œ×•×ª ×™×“× ×™×ª ×“×¨×š ×”-API (×”router/service/repo) -
+# ×”××“×ž×™×Ÿ ×‘×•×—×¨ ×¨×ž×ª ×’×™×©×” ×‘×¢×ª ×”×•×¡×¤×ª ×—×‘×¨ ×œ×ž×“×•×¨.
 # ============================================================================
 
 from sqlalchemy import event
 from sqlalchemy.orm import Session as SASession
 
-from app.models.mador import Mador
-from app.models.member_mador_access import MemberMadorAccess
+from app.models.group import Group
+from app.models.member_group_access import MemberGroupAccess
 
 
-#@event.listens_for(Mador.meetings, "append")
-#def on_meeting_added_to_mador(mador, meeting, initiator):
- #   session = SASession.object_session(mador)
+#@event.listens_for(Group.meetings, "append")
+#def on_meeting_added_to_group(group, meeting, initiator):
+ #   session = SASession.object_session(group)
   #  if not session:
    #     return
-    #for member in mador.members:
-     #   exists = session.query(MemberMadorAccess).filter(
-      #      MemberMadorAccess.member_uuid == member.UUID,
-       #     MemberMadorAccess.mador_uuid == mador.UUID,
-        #    MemberMadorAccess.access_level == meeting.accessLevel.value,
+    #for member in group.members:
+     #   exists = session.query(MemberGroupAccess).filter(
+      #      MemberGroupAccess.member_uuid == member.UUID,
+       #     MemberGroupAccess.group_uuid == group.UUID,
+        #    MemberGroupAccess.access_level == meeting.accessLevel.value,
        # ).first()
         #if not exists:
-         #   session.add(MemberMadorAccess(
+         #   session.add(MemberGroupAccess(
           #      member_uuid=member.UUID,
-           #     mador_uuid=mador.UUID,
+           #     group_uuid=group.UUID,
             #    access_level=meeting.accessLevel.value,
            # ))
 
 
-#@event.listens_for(Mador.members, "append")
-#def on_member_added_to_mador(mador, member, initiator):
-#    session = SASession.object_session(mador)
+#@event.listens_for(Group.members, "append")
+#def on_member_added_to_group(group, member, initiator):
+#    session = SASession.object_session(group)
 #    if not session:
 #        return
-#    for meeting in mador.meetings:
-#        exists = session.query(MemberMadorAccess).filter(
-#            MemberMadorAccess.member_uuid == member.UUID,
-#            MemberMadorAccess.mador_uuid == mador.UUID,
-#            MemberMadorAccess.access_level == meeting.accessLevel.value,
+#    for meeting in group.meetings:
+#        exists = session.query(MemberGroupAccess).filter(
+#            MemberGroupAccess.member_uuid == member.UUID,
+#            MemberGroupAccess.group_uuid == group.UUID,
+#            MemberGroupAccess.access_level == meeting.accessLevel.value,
 #        ).first()
 #        if not exists:
-#            session.add(MemberMadorAccess(
+#            session.add(MemberGroupAccess(
 #                member_uuid=member.UUID,
-#                mador_uuid=mador.UUID,
+#                group_uuid=group.UUID,
 #                access_level=meeting.accessLevel.value,
 #            ))
+

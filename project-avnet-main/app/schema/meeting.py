@@ -1,11 +1,11 @@
+﻿# ============================================================================
+# Meeting Schemas (Pydantic) - ×¡×›×ž×•×ª ×§×œ×˜/×¤×œ×˜ ×œ×¤×’×™×©×•×ª
 # ============================================================================
-# Meeting Schemas (Pydantic) - סכמות קלט/פלט לפגישות
-# ============================================================================
-# קובץ זה מגדיר את כל הסכמות שקשורות לפגישות:
-#   - MeetingRole: סוג הפגישה (audio/video/blast_dial)
-#   - MeetingInCreate: קלט יצירה
-#   - MeetingInUpdate: קלט עדכון (כל השדות אופציונליות)
-#   - MeetingOutput: תשובה ללקוח
+# ×§×•×‘×¥ ×–×” ×ž×’×“×™×¨ ××ª ×›×œ ×”×¡×›×ž×•×ª ×©×§×©×•×¨×•×ª ×œ×¤×’×™×©×•×ª:
+#   - MeetingRole: ×¡×•×’ ×”×¤×’×™×©×” (audio/video/blast_dial)
+#   - MeetingInCreate: ×§×œ×˜ ×™×¦×™×¨×”
+#   - MeetingInUpdate: ×§×œ×˜ ×¢×“×›×•×Ÿ (×›×œ ×”×©×“×•×ª ××•×¤×¦×™×•× ×œ×™×•×ª)
+#   - MeetingOutput: ×ª×©×•×‘×” ×œ×œ×§×•×—
 # ============================================================================
 
 from enum import Enum
@@ -15,41 +15,42 @@ from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from uuid import UUID
 
 
-# --- MeetingRole Enum - סוג פגישה ---
-# מגדיר איזו סוג פגישה ניתן ליצור
+# --- MeetingRole Enum - ×¡×•×’ ×¤×’×™×©×” ---
+# ×ž×’×“×™×¨ ××™×–×• ×¡×•×’ ×¤×’×™×©×” × ×™×ª×Ÿ ×œ×™×¦×•×¨
 class MeetingRole(str, Enum):
-    audio = "audio"           # פגישת אודיו
-    video = "video"           # פגישת וידאו
-    blast_dial = "blast_dial" # חיוג המוני
+    audio = "audio"           # ×¤×’×™×©×ª ××•×“×™×•
+    video = "video"           # ×¤×’×™×©×ª ×•×™×“××•
+    blast_dial = "blast_dial" # ×—×™×•×’ ×”×ž×•× ×™
 
     model_config = ConfigDict(use_enum_values=True)
 
 
-# --- MeetingInCreate - קלט ליצירת פגישה חדשה ---
+# --- MeetingInCreate - ×§×œ×˜ ×œ×™×¦×™×¨×ª ×¤×’×™×©×” ×—×“×©×” ---
 class MeetingInCreate(BaseModel):
-    m_number: str          # מספר הפגישה (למשל "891234")
-    accessLevel: MeetingRole  # סוג הפגישה
+    m_number: str          # ×ž×¡×¤×¨ ×”×¤×’×™×©×” (×œ×ž×©×œ "891234")
+    accessLevel: MeetingRole  # ×¡×•×’ ×”×¤×’×™×©×”
 
 
-# --- MeetingInUpdate - קלט לעדכון פגישה ---
-# כל השדות אופציונליות - מאפשר עדכון חלקי
+# --- MeetingInUpdate - ×§×œ×˜ ×œ×¢×“×›×•×Ÿ ×¤×’×™×©×” ---
+# ×›×œ ×”×©×“×•×ª ××•×¤×¦×™×•× ×œ×™×•×ª - ×ž××¤×©×¨ ×¢×“×›×•×Ÿ ×—×œ×§×™
 class MeetingInUpdate(BaseModel):
-    m_number: Optional[str] = None           # מספר פגישה חדש (אופציונלי)
-    accessLevel: Optional[MeetingRole] = None  # סוג חדש (אופציונלי)
-    password: Optional[str] = None           # סיסמה חדשה (אופציונלי)
+    m_number: Optional[str] = None           # ×ž×¡×¤×¨ ×¤×’×™×©×” ×—×“×© (××•×¤×¦×™×•× ×œ×™)
+    accessLevel: Optional[MeetingRole] = None  # ×¡×•×’ ×—×“×© (××•×¤×¦×™×•× ×œ×™)
+    password: Optional[str] = None           # ×¡×™×¡×ž×” ×—×“×©×” (××•×¤×¦×™×•× ×œ×™)
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 
-# --- MeetingOutput - פלט פגישה מלא ---
-# זה מה שהלקוח מקבל חזרה כששואל על פגישה
+# --- MeetingOutput - ×¤×œ×˜ ×¤×’×™×©×” ×ž×œ× ---
+# ×–×” ×ž×” ×©×”×œ×§×•×— ×ž×§×‘×œ ×—×–×¨×” ×›×©×©×•××œ ×¢×œ ×¤×’×™×©×”
 class MeetingOutput(BaseModel):
-    UUID: UUID                                                   # מזהה הפגישה
-    m_number: str                                                # מספר הפגישה
-    accessLevel: MeetingRole                                     # סוג הפגישה
-    password: Optional[str] = None                               # סיסמת הוועידה (אם קיימת)
-    madors: Optional[List[UUID]] = Field(default_factory=list)   # רשימת המדורים שהפגישה שייכת אליהם
+    UUID: UUID                                                   # ×ž×–×”×” ×”×¤×’×™×©×”
+    m_number: str                                                # ×ž×¡×¤×¨ ×”×¤×’×™×©×”
+    accessLevel: MeetingRole                                     # ×¡×•×’ ×”×¤×’×™×©×”
+    password: Optional[str] = None                               # ×¡×™×¡×ž×ª ×”×•×•×¢×™×“×” (×× ×§×™×™×ž×ª)
+    groups: Optional[List[UUID]] = Field(default_factory=list)   # ×¨×©×™×ž×ª ×”×ž×“×•×¨×™× ×©×”×¤×’×™×©×” ×©×™×™×›×ª ××œ×™×”×
    
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
+
 

@@ -1,7 +1,7 @@
-﻿# Project Avnet â€” Meet Manager
+﻿# Project Avnet — Meet Manager
 
 **Meet Manager** is a full-stack, role-based meetings management platform built for internal organizational use.  
-It enables admins to manage groups (groups), users, and virtual meeting rooms â€” with fine-grained per-user access control at the group level.
+It enables admins to manage groups, users, and virtual meeting rooms — with fine-grained per-user access control at the group level.
 
 ---
 
@@ -50,13 +50,13 @@ Meet Manager solves the problem of controlling who can see what type of meeting 
 
 ```
 Browser (React/Vite :5173)
-        â”‚
-        â”‚  HTTP + JWT Bearer token
-        â–¼
+  │
+  │  HTTP + JWT Bearer token
+  ▼
 FastAPI Backend (:8000)
-        â”‚
-        â”‚  SQLAlchemy ORM sessions
-        â–¼
+  │
+  │  SQLAlchemy ORM sessions
+  ▼
 PostgreSQL (:5432)
    stored in ./data1 (bind mount)
 ```
@@ -70,75 +70,75 @@ The frontend also maintains a fallback direct URL (`http://localhost:8000`) for 
 
 ```
 eden_project/
-â”œâ”€â”€ docker-compose.yml          # All services: db, api, frontend
-â”œâ”€â”€ .env                        # Environment variables (not committed)
-â”œâ”€â”€ data1/                      # PostgreSQL data directory (bind mount)
-â”œâ”€â”€ project-avnet-main/         # Backend (FastAPI)
-â”‚   â”œâ”€â”€ main.py                 # App entry point, lifespan, CORS, routers
-â”‚   â”œâ”€â”€ logger.py               # Async rotating daily log system
-â”‚   â”œâ”€â”€ requirements.txt
-â”‚   â””â”€â”€ app/
-â”‚       â”œâ”€â”€ core/
-â”‚       â”‚   â””â”€â”€ database.py     # SQLAlchemy engine, session, Base
-â”‚       â”œâ”€â”€ models/             # ORM models (DB table definitions)
-â”‚       â”‚   â”œâ”€â”€ user.py
-â”‚       â”‚   â”œâ”€â”€ group.py
-â”‚       â”‚   â”œâ”€â”€ meeting.py
-â”‚       â”‚   â”œâ”€â”€ member_group_access.py
-â”‚       â”‚   â””â”€â”€ events.py       # SQLAlchemy event listeners (disabled)
-â”‚       â”œâ”€â”€ schema/             # Pydantic input/output schemas
-â”‚       â”‚   â”œâ”€â”€ user.py
-â”‚       â”‚   â””â”€â”€ meeting.py
-â”‚       â”œâ”€â”€ routers/            # FastAPI route handlers
-â”‚       â”‚   â”œâ”€â”€ auth.py
-â”‚       â”‚   â”œâ”€â”€ user.py
-â”‚       â”‚   â”œâ”€â”€ group.py
-â”‚       â”‚   â”œâ”€â”€ meeting.py
-â”‚       â”‚   â””â”€â”€ protect.py
-â”‚       â”œâ”€â”€ service/            # Business logic layer
-â”‚       â”‚   â”œâ”€â”€ userService.py
-â”‚       â”‚   â”œâ”€â”€ groupService.py
-â”‚       â”‚   â””â”€â”€ meetingService.py
-â”‚       â”œâ”€â”€ repository/         # DB query layer
-â”‚       â”‚   â”œâ”€â”€ base.py
-â”‚       â”‚   â”œâ”€â”€ userRepo.py
-â”‚       â”‚   â”œâ”€â”€ groupRepo.py
-â”‚       â”‚   â””â”€â”€ meetingRepo.py
-â”‚       â”œâ”€â”€ security/
-â”‚       â”‚   â”œâ”€â”€ auth.py         # JWT sign & decode
-â”‚       â”‚   â”œâ”€â”€ hashHelper.py   # Argon2 password hashing
-â”‚       â”‚   â”œâ”€â”€ TokenValidator.py  # FastAPI dependency for auth guards
-â”‚       â”‚   â””â”€â”€ superAdminTest.py  # Auto-creates super_admin on startup
-â”‚       â””â”€â”€ util/
-â”‚           â””â”€â”€ init_db.py      # Table creation, optional RESET_DB
-â””â”€â”€ Meetings-App/               # Frontend (React + Vite)
-    â”œâ”€â”€ Dockerfile
-    â”œâ”€â”€ vite.config.js
-    â”œâ”€â”€ package.json
-    â””â”€â”€ src/
-        â”œâ”€â”€ App.jsx             # Root layout, sidebar, routing
-        â”œâ”€â”€ main.jsx            # React entry point
-        â”œâ”€â”€ services/
-        â”‚   â””â”€â”€ api.js          # Axios instance + all API modules
-        â”œâ”€â”€ context/
-        â”‚   â””â”€â”€ AuthContext.jsx # Global auth state (token, role, user)
-        â”œâ”€â”€ components/
-        â”‚   â”œâ”€â”€ ProtectedRoute.jsx
-        â”‚   â””â”€â”€ MeetingsPage.jsx
-        â”œâ”€â”€ mocks/
-        â”‚   â””â”€â”€ cmsMeetings.js  # Local mock CMS data (no backend)
-        â””â”€â”€ pages/
-            â”œâ”€â”€ Login.jsx
-            â”œâ”€â”€ Dashboard.jsx
-            â”œâ”€â”€ Users.jsx
-            â”œâ”€â”€ Groups.jsx
-            â”œâ”€â”€ AudioMeetings.jsx
-            â”œâ”€â”€ VideoMeetings.jsx
-            â”œâ”€â”€ BlastdialMeetings.jsx
-            â”œâ”€â”€ Reports.jsx
-            â”œâ”€â”€ Profile.jsx
-            â”œâ”€â”€ Settings.jsx
-            â””â”€â”€ Help.jsx
+├── docker-compose.yml          # All services: db, api, frontend
+├── .env                        # Environment variables (not committed)
+├── data1/                      # PostgreSQL data directory (bind mount)
+├── project-avnet-main/         # Backend (FastAPI)
+│   ├── main.py                 # App entry point, lifespan, CORS, routers
+│   ├── logger.py               # Async rotating daily log system
+│   ├── requirements.txt
+│   └── app/
+│       ├── core/
+│       │   └── database.py     # SQLAlchemy engine, session, Base
+│       ├── models/             # ORM models (DB table definitions)
+│       │   ├── user.py
+│       │   ├── group.py
+│       │   ├── meeting.py
+│       │   ├── member_group_access.py
+│       │   └── events.py       # SQLAlchemy event listeners (disabled)
+│       ├── schema/             # Pydantic input/output schemas
+│       │   ├── user.py
+│       │   └── meeting.py
+│       ├── routers/            # FastAPI route handlers
+│       │   ├── auth.py
+│       │   ├── user.py
+│       │   ├── group.py
+│       │   ├── meeting.py
+│       │   └── protect.py
+│       ├── service/            # Business logic layer
+│       │   ├── userService.py
+│       │   ├── groupService.py
+│       │   └── meetingService.py
+│       ├── repository/         # DB query layer
+│       │   ├── base.py
+│       │   ├── userRepo.py
+│       │   ├── groupRepo.py
+│       │   └── meetingRepo.py
+│       ├── security/
+│       │   ├── auth.py         # JWT sign & decode
+│       │   ├── hashHelper.py   # Argon2 password hashing
+│       │   ├── TokenValidator.py  # FastAPI dependency for auth guards
+│       │   └── superAdminTest.py  # Auto-creates super_admin on startup
+│       └── util/
+│           └── init_db.py      # Table creation, optional RESET_DB
+└── Meetings-App/               # Frontend (React + Vite)
+  ├── Dockerfile
+  ├── vite.config.js
+  ├── package.json
+  └── src/
+    ├── App.jsx             # Root layout, sidebar, routing
+    ├── main.jsx            # React entry point
+    ├── services/
+    │   └── api.js          # Axios instance + all API modules
+    ├── context/
+    │   └── AuthContext.jsx # Global auth state (token, role, user)
+    ├── components/
+    │   ├── ProtectedRoute.jsx
+    │   └── MeetingsPage.jsx
+    ├── mocks/
+    │   └── cmsMeetings.js  # Local mock CMS data (no backend)
+    └── pages/
+      ├── Login.jsx
+      ├── Dashboard.jsx
+      ├── Users.jsx
+      ├── Groups.jsx
+      ├── AudioMeetings.jsx
+      ├── VideoMeetings.jsx
+      ├── BlastdialMeetings.jsx
+      ├── Reports.jsx
+      ├── Profile.jsx
+      ├── Settings.jsx
+      └── Help.jsx
 ```
 
 ---
@@ -469,6 +469,15 @@ If the token is invalid or expired, all protected endpoints return `401`.
 [INFO]-17:15:23 Creating viewer user with s_id=logviewer001 by requester s_id=superadmin role=super_admin
 [INFO]-17:15:23 AUDIT mutation POST /users/create-viewer | query=- | user=superadmin:super_admin ip=172.18.0.1 | status=200 | duration_ms=151.18
 ```
+
+---
+
+## GitHub & Credits
+
+Project maintained by [edenfc10](https://github.com/edenfc10) — public repository: [edenfc10/project-avnet](https://github.com/edenfc10/project-avnet)
+
+---
+
 ## Recent Technical Changes
 
 - שיפורי לוגים: כל פעולה (יצירה/מחיקה/עדכון) נרשמת גם כ-AUDIT וגם ברמת ראוטר, כולל פרטי משתמש, תפקיד, סטטוס וזמן ריצה.
@@ -478,6 +487,12 @@ If the token is invalid or expired, all protected endpoints return `401`.
 - audit middleware: כל קריאת API שמשנה נתונים (POST/PUT/DELETE) נרשמת אוטומטית עם כל הפרטים.
 - שיפורי הרשאות: כל endpoint בודק תפקיד משתמש, כולל viewer, agent, admin, super_admin.
 - עדכון/הוספת הערות ותיעוד בקוד וב-README.
+
+---
+
+## License
+
+This project is open source and available under the MIT License.
 
 ---
 

@@ -6,15 +6,13 @@ import "./Sidebar.css";
 const getMenuSections = (isHebrew) => [
   {
     title: isHebrew ? "ראשי" : "MANAGER",
-    items: [
-      { label: isHebrew ? "לוח מחוונים" : "Dashboard", path: "/dashboard" },
-    ],
+    items: [{ label: isHebrew ? "לוח צג" : "Dashboard", path: "/dashboard" }],
   },
   {
     title: isHebrew ? "ניהול מערכת" : "MANAGEMENT",
     items: [
       { label: isHebrew ? "משתמשים" : "Users", path: "/users" },
-      { label: isHebrew ? "קבוצות" : "Groups", path: "/groups" },
+      { label: isHebrew ? "מדורים" : "Groups", path: "/groups" },
       { label: isHebrew ? "דוחות" : "Reports", path: "/reports" },
     ],
   },

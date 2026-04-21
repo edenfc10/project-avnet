@@ -11,8 +11,9 @@ const ACCESS_LEVELS = ["audio", "video", "blast_dial"];
 // היררכיית roles: super_admin > admin > agent > viewer
 const ROLE_HIERARCHY = { super_admin: 4, admin: 3, agent: 2, viewer: 1 };
 
-export default function Groups() {
+export default function Groups({ language = "en" }) {
   const { currentUser } = useAuth();
+  const isHebrew = language === "he";
   const role = currentUser?.role;
   const myUUID = currentUser?.UUID || currentUser?.uuid;
   const myLevel = ROLE_HIERARCHY[role] || 0;
@@ -21,6 +22,150 @@ export default function Groups() {
   const canReadAllUsers = role !== "viewer";
   // viewer לא יכול לנהל חברים בכלל
   const canManageMembers = myLevel >= 2;
+
+  const accessLevelLabels = {
+    audio: isHebrew ? "ועידות אודיו" : "audio",
+    video: isHebrew ? "ועידות וידאו" : "video",
+    blast_dial: isHebrew ? "ועידות הזנקה" : "blast_dial",
+  };
+
+  const text = {
+    pageTitle: isHebrew ? "מדורים" : "Groups",
+    createTitle: isHebrew ? "יצירת מדור" : "Create Group",
+    createPlaceholder: isHebrew ? "הכנס שם מדור" : "Enter group name",
+    creating: isHebrew ? "יוצר..." : "Creating...",
+    createButton: isHebrew ? "צור מדור" : "Create Group",
+    loadGroupsError: isHebrew
+      ? "טעינת המדורים נכשלה."
+      : "Failed to load groups.",
+    createGroupError: isHebrew
+      ? "יצירת המדור נכשלה."
+      : "Failed to create group.",
+    deleteConfirm: isHebrew
+      ? "האם אתה בטוח שברצונך למחוק מדור זה?"
+      : "Are you sure you want to delete this group?",
+    deleteGroupModalTitle: isHebrew ? "מחיקת מדור" : "Delete Group",
+    deleteGroupModalMessage: isHebrew
+      ? "האם אתה בטוח שברצונך למחוק את המדור"
+      : "Are you sure you want to delete the group",
+    deletingGroup: isHebrew ? "מוחק..." : "Deleting...",
+    deleteGroupError: isHebrew
+      ? "מחיקת המדור נכשלה."
+      : "Failed to delete group.",
+    updateGroupError: isHebrew
+      ? "עדכון המדור נכשל."
+      : "Failed to update group.",
+    loadGroupDataError: isHebrew
+      ? "טעינת נתוני המדור נכשלה."
+      : "Failed to load group data.",
+    selectMeetingType: isHebrew
+      ? "יש לבחור לפחות סוג ועידה אחד."
+      : "Select at least one meeting type.",
+    userAlreadyHasTypes: isHebrew
+      ? "למשתמש כבר יש את כל סוגי הוועידות שנבחרו."
+      : "Selected user already has all selected meeting types.",
+    cannotAddSelf: isHebrew
+      ? "אי אפשר להוסיף את עצמך לקבוצה."
+      : "You cannot add yourself to a group.",
+    addMemberError: isHebrew ? "הוספת המשתמש נכשלה." : "Failed to add member.",
+    cannotRemoveSelf: isHebrew
+      ? "אי אפשר להסיר את עצמך מהקבוצה."
+      : "You cannot remove yourself from a group.",
+    removeMemberError: isHebrew
+      ? "הסרת המשתמש נכשלה."
+      : "Failed to remove member.",
+    cannotRemoveOwnAccess: isHebrew
+      ? "אי אפשר להסיר לעצמך הרשאה מהקבוצה."
+      : "You cannot remove your own access from a group.",
+    removeMeetingTypeError: isHebrew
+      ? "הסרת סוג הוועידה נכשלה."
+      : "Failed to remove meeting type.",
+    meetingAssignedElsewhere: isHebrew
+      ? "הוועידה כבר משויכת לקבוצה אחרת ואי אפשר לצרף אותה לכאן."
+      : "This meeting is already assigned to another group and cannot be added here.",
+    meetingUnavailable: isHebrew
+      ? "הוועידה הזאת לא זמינה לקבוצה הזו."
+      : "This meeting is not available for this group.",
+    addMeetingError: isHebrew
+      ? "הוספת הוועידה נכשלה."
+      : "Failed to add meeting.",
+    removeMeetingError: isHebrew
+      ? "הסרת הוועידה נכשלה."
+      : "Failed to remove meeting.",
+    allGroups: isHebrew ? "כל המדורים" : "All Groups",
+    of: isHebrew ? "מתוך" : "of",
+    searchGroupPlaceholder: isHebrew
+      ? "חיפוש לפי שם מדור..."
+      : "Search by group name...",
+    refresh: isHebrew ? "רענון" : "Refresh",
+    groupsHint: isHebrew
+      ? 'לחץ על "ניהול" כדי לצפות ולנהל חברי מדור וועידות.'
+      : 'Click "Manage" to view and manage group members and meetings.',
+    loadingGroups: isHebrew ? "טוען מדורים..." : "Loading groups...",
+    noGroups: isHebrew ? "לא נמצאו מדורים." : "No groups found.",
+    noGroupsMatch: isHebrew
+      ? "לא נמצאו מדורים שמתאימים לחיפוש."
+      : "No groups match your search.",
+    save: isHebrew ? "שמור" : "Save",
+    cancel: isHebrew ? "ביטול" : "Cancel",
+    members: isHebrew ? "חברים" : "Members",
+    meetings: isHebrew ? "הוספת ועידות" : "Add Meetings",
+    manage: isHebrew ? "ניהול" : "Manage",
+    editName: isHebrew ? "ערוך שם" : "Edit Name",
+    delete: isHebrew ? "מחיקה" : "Delete",
+    manageTitle: isHebrew ? "קבוצה" : "Group",
+    loading: isHebrew ? "טוען..." : "Loading...",
+    currentMembers: isHebrew ? "חברים נוכחיים" : "Current Members",
+    noMembers: isHebrew ? "עדיין אין חברים." : "No members yet.",
+    username: isHebrew ? "שם משתמש" : "Username",
+    tableRole: isHebrew ? "תפקיד" : "Role",
+    meetingTypes: isHebrew ? "סוגי ועידה" : "Meeting Types",
+    noAccessLevels: isHebrew ? "אין הרשאות" : "No access levels",
+    removeUser: isHebrew ? "הסר משתמש" : "Remove User",
+    removeMemberModalTitle: isHebrew
+      ? "הסרת שיוך משתמש מהמדור"
+      : "Remove User Assignment",
+    removeMemberModalMessage: isHebrew
+      ? "האם אתה בטוח שברצונך להסיר את המשתמש"
+      : "Are you sure you want to remove user",
+    removingUser: isHebrew ? "מסיר..." : "Removing...",
+    addMember: isHebrew ? "הוספת חבר" : "Add Member",
+    viewersOnly: isHebrew ? " (צפיינים בלבד)" : " (Viewers only)",
+    agentViewerOnly: isHebrew ? " (Agent ו-Viewer בלבד)" : " (Agent & Viewer)",
+    noUsersToAdd: isHebrew
+      ? "אין משתמשים זמינים להוספה."
+      : "No users available to add.",
+    searchUserPlaceholder: isHebrew
+      ? "חיפוש משתמש ברשימה..."
+      : "Search user in list...",
+    searchUsersAria: isHebrew ? "חיפוש משתמשים" : "Search users",
+    addableUsersAria: isHebrew ? "משתמשים זמינים להוספה" : "Addable users",
+    noMatchingUsers: isHebrew
+      ? "לא נמצאו משתמשים מתאימים."
+      : "No matching users.",
+    meetingTypesAria: isHebrew ? "סוגי ועידה" : "Meeting types",
+    alreadyAssignedTitle: isHebrew ? "כבר משויך" : "Already assigned",
+    toggleMeetingType: isHebrew ? "החלף סוג ועידה" : "Toggle meeting type",
+    alreadyAssigned: isHebrew ? "כבר משויך" : "Already assigned",
+    removeType: isHebrew ? "הסר סוג" : "Remove type",
+    adding: isHebrew ? "מוסיף..." : "Adding...",
+    add: isHebrew ? "הוסף" : "Add",
+    meetingNumber: isHebrew ? "מספר ועידה" : "Meeting #",
+    type: isHebrew ? "סוג" : "Type",
+    remove: isHebrew ? "הסר" : "Remove",
+    searchMeetingPlaceholder: isHebrew
+      ? "חיפוש ועידה לפי מספר או סוג..."
+      : "Search meeting by number or type...",
+    selectFromResults: isHebrew ? "בחר מתוך התוצאות" : "Select from results",
+    noMatchingMeetings: isHebrew
+      ? "לא נמצאו ועידות מתאימות."
+      : "No matching meetings.",
+    noMeetingsToAdd: isHebrew
+      ? "אין ועידות זמינות להוספה."
+      : "No meetings available to add.",
+  };
+
+  const formatAccessLevel = (level) => accessLevelLabels[level] || level;
 
   // קבוצות
   const [groups, setGroups] = useState([]);
@@ -53,11 +198,17 @@ export default function Groups() {
   const [modalMembers, setModalMembers] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [showDeleteGroupConfirm, setShowDeleteGroupConfirm] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState(null);
+  const [deleteGroupLoading, setDeleteGroupLoading] = useState(false);
+  const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState(null);
+  const [removeMemberLoadingId, setRemoveMemberLoadingId] = useState("");
 
   // הוספת חבר
   const [allUsers, setAllUsers] = useState([]);
   const [addUserId, setAddUserId] = useState("");
-  const [addAccessLevels, setAddAccessLevels] = useState(["audio"]);
+  const [addAccessLevels, setAddAccessLevels] = useState([]);
   const [addMemberLoading, setAddMemberLoading] = useState(false);
 
   // שיוך פגישה
@@ -121,9 +272,8 @@ export default function Groups() {
     if (!q) return addableUsers;
     return addableUsers.filter(
       (u) =>
-        u.username.toLowerCase().includes(q) ||
-        u.s_id.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q),
+        (u.username || "").toLowerCase().startsWith(q) ||
+        (u.s_id || "").toLowerCase().startsWith(q) ,
     );
   }, [addableUsers, searchUserText]);
 
@@ -131,6 +281,16 @@ export default function Groups() {
     if (!addUserId) return [];
     return getUserAccessLevelsInSelectedGroup(addUserId);
   }, [addUserId, selectedGroup?.member_access_levels]);
+
+  const selectedAddUser = useMemo(() => {
+    if (!addUserId) return null;
+    return (
+      (allUsers || []).find((u) => String(u.UUID) === String(addUserId)) || null
+    );
+  }, [addUserId, allUsers]);
+
+  const canRemoveAccessFromSelectedUser =
+    isAdmin || (isAgent && selectedAddUser?.role === "viewer");
 
   const newAccessLevelsToAdd = useMemo(() => {
     return addAccessLevels.filter(
@@ -170,8 +330,8 @@ export default function Groups() {
     if (!q) return addableMeetingsForSelectedGroup;
     return addableMeetingsForSelectedGroup.filter(
       (m) =>
-        String(m.m_number).includes(q) ||
-        (m.accessLevel || "").toLowerCase().includes(q),
+        String(m.m_number).startsWith(q) ||
+        (m.accessLevel || "").toLowerCase().startsWith(q),
     );
   }, [addableMeetingsForSelectedGroup, searchMeetingText]);
 
@@ -182,7 +342,7 @@ export default function Groups() {
       const resp = await groupAPI.listGroups();
       setGroups(resp.data || []);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to load groups.");
+      setError(err.response?.data?.detail || text.loadGroupsError);
     } finally {
       setLoading(false);
     }
@@ -202,20 +362,36 @@ export default function Groups() {
       setNewGroupName("");
       await fetchGroups();
     } catch (err) {
-      setCreateError(err.response?.data?.detail || "Failed to create group.");
+      setCreateError(err.response?.data?.detail || text.createGroupError);
     } finally {
       setCreateLoading(false);
     }
   };
 
   // --- מחיקת קבוצה ---
-  const handleDelete = async (groupUUID) => {
-    if (!window.confirm("האם אתה בטוח שברצונך למחוק קבוצה זו?")) return;
+  const handleDelete = (group) => {
+    setGroupToDelete(group);
+    setShowDeleteGroupConfirm(true);
+  };
+
+  const closeDeleteGroupConfirm = () => {
+    if (deleteGroupLoading) return;
+    setShowDeleteGroupConfirm(false);
+    setGroupToDelete(null);
+  };
+
+  const confirmDeleteGroup = async () => {
+    if (!groupToDelete) return;
+
+    setDeleteGroupLoading(true);
     try {
-      await groupAPI.deleteGroup(groupUUID);
+      await groupAPI.deleteGroup(groupToDelete.UUID);
+      closeDeleteGroupConfirm();
       await fetchGroups();
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to delete group.");
+      setError(err.response?.data?.detail || text.deleteGroupError);
+    } finally {
+      setDeleteGroupLoading(false);
     }
   };
 
@@ -228,7 +404,7 @@ export default function Groups() {
       setEditName("");
       await fetchGroups();
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to update group.");
+      setError(err.response?.data?.detail || text.updateGroupError);
     }
   };
 
@@ -240,7 +416,7 @@ export default function Groups() {
     setModalMembers([]);
     setAddUserId("");
     setAddMeetingId("");
-    setAddAccessLevels(["audio"]);
+    setAddAccessLevels([]);
     try {
       const [membersResp, usersResp, meetingsResp] = await Promise.allSettled([
         groupAPI.getGroupMembers(group.UUID),
@@ -266,7 +442,7 @@ export default function Groups() {
         if (msg) setModalError(msg);
       }
     } catch (err) {
-      setModalError("Failed to load group data.");
+      setModalError(text.loadGroupDataError);
     } finally {
       setModalLoading(false);
     }
@@ -284,12 +460,11 @@ export default function Groups() {
 
   useEffect(() => {
     if (!addUserId) {
-      setAddAccessLevels(["audio"]);
+      setAddAccessLevels([]);
       return;
     }
 
-    const existingLevels = getUserAccessLevelsInSelectedGroup(addUserId);
-    setAddAccessLevels(existingLevels.length > 0 ? existingLevels : ["audio"]);
+    setAddAccessLevels([]);
   }, [addUserId, selectedGroup?.member_access_levels]);
 
   useEffect(() => {
@@ -306,16 +481,16 @@ export default function Groups() {
   const handleAddMember = async () => {
     if (!addUserId || !selectedGroup) return;
     if (addAccessLevels.length === 0) {
-      setModalError("Select at least one meeting type.");
+      setModalError(text.selectMeetingType);
       return;
     }
     if (newAccessLevelsToAdd.length === 0) {
-      setModalError("Selected user already has all selected meeting types.");
+      setModalError(text.userAlreadyHasTypes);
       return;
     }
     // מניעת שיוך עצמי לקבוצה
     if (addUserId === currentUser?.UUID) {
-      setModalError("You cannot add yourself to a group.");
+      setModalError(text.cannotAddSelf);
       return;
     }
     setAddMemberLoading(true);
@@ -339,23 +514,39 @@ export default function Groups() {
         setSelectedGroup(latestGroup);
       }
       setAddUserId("");
-      setAddAccessLevels(["audio"]);
+      setAddAccessLevels([]);
       await fetchGroups();
     } catch (err) {
-      setModalError(err.response?.data?.detail || "Failed to add member.");
+      setModalError(err.response?.data?.detail || text.addMemberError);
     } finally {
       setAddMemberLoading(false);
     }
   };
 
   // --- הסרת חבר ---
-  const handleRemoveMember = async (userId) => {
+  const handleRemoveMember = (userId, username) => {
     if (!selectedGroup) return;
     // מניעת הסרה עצמית מקבוצה
     if (userId === currentUser?.UUID) {
-      setModalError("You cannot remove yourself from a group.");
+      setModalError(text.cannotRemoveSelf);
       return;
     }
+
+    setMemberToRemove({ userId, username });
+    setShowRemoveMemberConfirm(true);
+  };
+
+  const closeRemoveMemberConfirm = () => {
+    if (removeMemberLoadingId) return;
+    setShowRemoveMemberConfirm(false);
+    setMemberToRemove(null);
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!selectedGroup || !memberToRemove?.userId) return;
+
+    const userId = memberToRemove.userId;
+    setRemoveMemberLoadingId(String(userId));
     setModalError("");
     try {
       await groupAPI.removeMember(selectedGroup.UUID, userId);
@@ -366,16 +557,19 @@ export default function Groups() {
       const members = membersResp.data || [];
       setModalMembers(members);
       setAllUsers(usersResp.data || []);
+      closeRemoveMemberConfirm();
       await fetchGroups();
     } catch (err) {
-      setModalError(err.response?.data?.detail || "Failed to remove member.");
+      setModalError(err.response?.data?.detail || text.removeMemberError);
+    } finally {
+      setRemoveMemberLoadingId("");
     }
   };
 
   const handleRemoveMemberAccess = async (userId, accessLevel) => {
     if (!selectedGroup) return;
     if (userId === currentUser?.UUID) {
-      setModalError("You cannot remove your own access from a group.");
+      setModalError(text.cannotRemoveOwnAccess);
       return;
     }
     setModalError("");
@@ -396,9 +590,7 @@ export default function Groups() {
       setSelectedGroup(groupResp.data);
       await fetchGroups();
     } catch (err) {
-      setModalError(
-        err.response?.data?.detail || "Failed to remove meeting type.",
-      );
+      setModalError(err.response?.data?.detail || text.removeMeetingTypeError);
     }
   };
 
@@ -407,9 +599,7 @@ export default function Groups() {
     if (!addMeetingId || !selectedGroup) return;
 
     if (meetingsAssignedToOtherGroups.has(String(addMeetingId))) {
-      setModalError(
-        "This meeting is already assigned to another group and cannot be added here.",
-      );
+      setModalError(text.meetingAssignedElsewhere);
       return;
     }
 
@@ -417,7 +607,7 @@ export default function Groups() {
       (meeting) => String(meeting.UUID) === String(addMeetingId),
     );
     if (!canAddMeeting) {
-      setModalError("This meeting is not available for this group.");
+      setModalError(text.meetingUnavailable);
       return;
     }
 
@@ -435,7 +625,7 @@ export default function Groups() {
         setGroups(resp.data || []);
       }
     } catch (err) {
-      setModalError(err.response?.data?.detail || "Failed to add meeting.");
+      setModalError(err.response?.data?.detail || text.addMeetingError);
     } finally {
       setAddMeetingLoading(false);
     }
@@ -456,23 +646,23 @@ export default function Groups() {
         setGroups(resp.data || []);
       }
     } catch (err) {
-      setModalError(err.response?.data?.detail || "Failed to remove meeting.");
+      setModalError(err.response?.data?.detail || text.removeMeetingError);
     }
   };
 
   return (
     <div className="page groups-page">
-      <h2 className="page-header">Groups</h2>
+      <h2 className="page-header">{text.pageTitle}</h2>
 
       {/* כרטיס יצירת קבוצה — admin/super_admin בלבד */}
       {isAdmin && (
         <section className="card groups-create-card">
-          <h3>Create Group</h3>
+          <h3>{text.createTitle}</h3>
           <div className="groups-create-row">
             <input
               className="groups-input"
               type="text"
-              placeholder="Enter group name"
+              placeholder={text.createPlaceholder}
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -482,7 +672,7 @@ export default function Groups() {
               onClick={handleCreate}
               disabled={createLoading || !newGroupName.trim()}
             >
-              {createLoading ? "Creating..." : "Create Group"}
+              {createLoading ? text.creating : text.createButton}
             </button>
           </div>
           {createError && <div className="groups-error">{createError}</div>}
@@ -492,9 +682,9 @@ export default function Groups() {
       {/* רשימת קבוצות */}
       <section className="card groups-list-card">
         <h3>
-          All Groups ({filteredGroups.length}
+          {text.allGroups} ({filteredGroups.length}
           {filteredGroups.length !== groups.length
-            ? ` of ${groups.length}`
+            ? ` ${text.of} ${groups.length}`
             : ""}
           )
         </h3>
@@ -505,7 +695,7 @@ export default function Groups() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by group name..."
+            placeholder={text.searchGroupPlaceholder}
           />
           <button
             className="btn-secondary refresh-soft-button"
@@ -515,23 +705,19 @@ export default function Groups() {
               fetchGroups();
             }}
           >
-            Refresh
+            {text.refresh}
           </button>
         </div>
 
-        <p className="groups-hint">
-          Click "Manage" to view and manage group members and meetings.
-        </p>
+        <p className="groups-hint">{text.groupsHint}</p>
 
         {loading ? (
-          <div className="groups-empty">Loading groups...</div>
+          <div className="groups-empty">{text.loadingGroups}</div>
         ) : error ? (
           <div className="groups-error">{error}</div>
         ) : filteredGroups.length === 0 ? (
           <div className="groups-empty">
-            {groups.length === 0
-              ? "No groups found."
-              : "No groups match your search."}
+            {groups.length === 0 ? text.noGroups : text.noGroupsMatch}
           </div>
         ) : (
           <div className="groups-list">
@@ -553,21 +739,21 @@ export default function Groups() {
                         className="btn-primary"
                         onClick={() => handleUpdate(group.UUID)}
                       >
-                        Save
+                        {text.save}
                       </button>
                       <button
                         className="btn-ghost"
                         onClick={() => setEditingGroup(null)}
                       >
-                        Cancel
+                        {text.cancel}
                       </button>
                     </div>
                   ) : (
                     <>
                       <strong className="group-name">{group.name}</strong>
                       <span className="group-meta">
-                        Members: {getGroupMemberCount(group)} &bull; Meetings:{" "}
-                        {group.meetings?.length ?? 0}
+                        {text.members}: {getGroupMemberCount(group)} &bull;{" "}
+                        {text.meetings}: {group.meetings?.length ?? 0}
                       </span>
                     </>
                   )}
@@ -577,7 +763,7 @@ export default function Groups() {
                     className="btn-manage"
                     onClick={() => openModal(group)}
                   >
-                    Manage
+                    {text.manage}
                   </button>
                   {isAdmin && editingGroup !== group.UUID && (
                     <button
@@ -587,15 +773,15 @@ export default function Groups() {
                         setEditName(group.name);
                       }}
                     >
-                      Edit Name
+                      {text.editName}
                     </button>
                   )}
                   {isAdmin && (
                     <button
                       className="btn-danger"
-                      onClick={() => handleDelete(group.UUID)}
+                      onClick={() => handleDelete(group)}
                     >
-                      Delete
+                      {text.delete}
                     </button>
                   )}
                 </div>
@@ -610,31 +796,35 @@ export default function Groups() {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="groups-modal" onClick={(e) => e.stopPropagation()}>
             <div className="groups-modal-header">
-              <h3>Manage: {selectedGroup.name}</h3>
+              <h3>
+                {text.manageTitle}: {selectedGroup.name}
+              </h3>
               <button className="btn-ghost modal-close" onClick={closeModal}>
                 ✕
               </button>
             </div>
 
             {modalLoading ? (
-              <div className="groups-empty">Loading...</div>
+              <div className="groups-empty">{text.loading}</div>
             ) : (
               <div className="groups-modal-body">
                 {modalError && <div className="groups-error">{modalError}</div>}
 
                 {/* חברים קיימים */}
                 <div className="groups-modal-section">
-                  <h4>Current Members ({modalMembers.length})</h4>
+                  <h4>
+                    {text.currentMembers} ({modalMembers.length})
+                  </h4>
                   {modalMembers.length === 0 ? (
-                    <div className="groups-empty">No members yet.</div>
+                    <div className="groups-empty">{text.noMembers}</div>
                   ) : (
                     <table className="groups-table">
                       <thead>
                         <tr>
                           <th>S_ID</th>
-                          <th>Username</th>
-                          <th>Role</th>
-                          <th>Meeting Types</th>
+                          <th>{text.username}</th>
+                          <th>{text.tableRole}</th>
+                          <th>{text.meetingTypes}</th>
                           {(isAdmin || isAgent) && <th></th>}
                         </tr>
                       </thead>
@@ -664,7 +854,7 @@ export default function Groups() {
                                           key={`${member.UUID}-${lvl}`}
                                           className="member-access-badge member-access-pill"
                                         >
-                                          <span>{lvl}</span>
+                                          <span>{formatAccessLevel(lvl)}</span>
                                           {canRemoveLevel && (
                                             <button
                                               type="button"
@@ -675,7 +865,7 @@ export default function Groups() {
                                                   lvl,
                                                 )
                                               }
-                                              title={`Remove ${lvl}`}
+                                              title={`${text.remove} ${formatAccessLevel(lvl)}`}
                                             >
                                               ×
                                             </button>
@@ -686,7 +876,7 @@ export default function Groups() {
                                   )
                                 ) : (
                                   <span className="groups-empty">
-                                    No access levels
+                                    {text.noAccessLevels}
                                   </span>
                                 )}
                               </div>
@@ -699,10 +889,11 @@ export default function Groups() {
                                   onClick={() =>
                                     handleRemoveMember(
                                       member.UUID || member.s_id,
+                                      member.username,
                                     )
                                   }
                                 >
-                                  Remove User
+                                  {text.removeUser}
                                 </button>
                               </td>
                             )}
@@ -717,104 +908,116 @@ export default function Groups() {
                 {canManageMembers && (
                   <div className="groups-modal-section">
                     <h4>
-                      Add Member
+                      {text.addMember}
                       {role === "agent"
-                        ? " (Viewers only)"
+                        ? text.viewersOnly
                         : role === "admin"
-                          ? " (Agent & Viewer)"
+                          ? text.agentViewerOnly
                           : ""}
                     </h4>
                     {addableUsers.length === 0 ? (
-                      <div className="groups-empty">
-                        No users available to add.
-                      </div>
+                      <div className="groups-empty">{text.noUsersToAdd}</div>
                     ) : (
-                      <div className="groups-add-row">
-                        <input
-                          className="search-input"
-                          type="text"
-                          placeholder="Search user by name or S_ID..."
-                          value={searchUserText}
-                          onChange={(e) => setSearchUserText(e.target.value)}
-                        />
-                        {searchUserText && filteredAddableUsers.length > 0 ? (
-                          <select
-                            className="groups-select"
-                            value={addUserId}
-                            onChange={(e) => {
-                              setAddUserId(e.target.value);
-                              setSearchUserText("");
-                            }}
-                            size={Math.min(5, filteredAddableUsers.length)}
-                          >
-                            <option value="">— Select from results —</option>
-                            {filteredAddableUsers.map((u) => (
-                              <option key={u.UUID} value={u.UUID}>
-                                {u.username} ({u.s_id}) — {u.role}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          searchUserText && (
-                            <div
-                              className="groups-empty"
-                              style={{ padding: "8px" }}
-                            >
-                              No matching users.
-                            </div>
-                          )
-                        )}
-                        {canManageMembers && (
+                      <div className="groups-add-row groups-add-member-row">
+                        <div className="groups-search-select" role="group">
+                          <input
+                            className="groups-search-select-input"
+                            type="text"
+                            placeholder={text.searchUserPlaceholder}
+                            value={searchUserText}
+                            onChange={(e) => setSearchUserText(e.target.value)}
+                            aria-label={text.searchUsersAria}
+                          />
                           <div
-                            className="groups-access-segmented"
-                            role="group"
-                            aria-label="Meeting types"
+                            className="groups-search-select-list"
+                            role="listbox"
+                            aria-label={text.addableUsersAria}
                           >
-                            {ACCESS_LEVELS.map((lvl) => {
-                              const active = addAccessLevels.includes(lvl);
-                              const isExisting =
-                                existingAccessLevelsForSelectedUser.includes(
-                                  lvl,
+                            {filteredAddableUsers.length > 0 ? (
+                              filteredAddableUsers.map((u) => {
+                                const selected =
+                                  String(addUserId) === String(u.UUID);
+                                return (
+                                  <button
+                                    key={u.UUID}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={selected}
+                                    className={`groups-search-select-option ${selected ? "is-selected" : ""}`}
+                                    onClick={() => setAddUserId(String(u.UUID))}
+                                  >
+                                    {u.username} ({u.s_id}) — {u.role}
+                                  </button>
                                 );
-                              return (
-                                <button
-                                  key={lvl}
-                                  type="button"
-                                  className={`groups-segment-btn ${active ? "is-active" : ""} ${isExisting ? "is-locked" : ""}`}
-                                  disabled={isExisting}
-                                  title={
-                                    isExisting
-                                      ? "Already assigned"
-                                      : "Toggle meeting type"
-                                  }
-                                  onClick={() => {
-                                    if (isExisting) return;
-                                    if (active) {
-                                      setAddAccessLevels((prev) =>
-                                        prev.filter((x) => x !== lvl),
-                                      );
-                                    } else {
-                                      setAddAccessLevels((prev) =>
-                                        prev.includes(lvl)
-                                          ? prev
-                                          : [...prev, lvl],
-                                      );
+                              })
+                            ) : (
+                              <div
+                                className="groups-empty"
+                                style={{ padding: "8px" }}
+                              >
+                                {text.noMatchingUsers}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {canManageMembers && (
+                          <div className="groups-types-field">
+                            <div className="groups-field-label">
+                              TYPE MEETINGS
+                            </div>
+                            <div
+                              className="groups-access-segmented"
+                              role="group"
+                              aria-label={text.meetingTypesAria}
+                            >
+                              {ACCESS_LEVELS.map((lvl) => {
+                                const active = addAccessLevels.includes(lvl);
+                                const isExisting =
+                                  existingAccessLevelsForSelectedUser.includes(
+                                    lvl,
+                                  );
+                                return (
+                                  <button
+                                    key={lvl}
+                                    type="button"
+                                    className={`groups-segment-btn ${active ? "is-active" : ""} ${isExisting ? "is-assigned" : ""}`}
+                                    title={
+                                      isExisting
+                                        ? canRemoveAccessFromSelectedUser
+                                          ? `${text.removeType} ${formatAccessLevel(lvl)}`
+                                          : text.alreadyAssignedTitle
+                                        : text.toggleMeetingType
                                     }
-                                  }}
-                                >
-                                  {lvl}
-                                </button>
-                              );
-                            })}
+                                    onClick={() => {
+                                      if (isExisting) {
+                                        if (!canRemoveAccessFromSelectedUser)
+                                          return;
+                                        handleRemoveMemberAccess(
+                                          addUserId,
+                                          lvl,
+                                        );
+                                        return;
+                                      }
+                                      if (active) {
+                                        setAddAccessLevels((prev) =>
+                                          prev.filter((x) => x !== lvl),
+                                        );
+                                      } else {
+                                        setAddAccessLevels((prev) =>
+                                          prev.includes(lvl)
+                                            ? prev
+                                            : [...prev, lvl],
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    {formatAccessLevel(lvl)}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
-                        {addUserId &&
-                          existingAccessLevelsForSelectedUser.length > 0 && (
-                            <div className="groups-hint" style={{ margin: 0 }}>
-                              Already assigned:{" "}
-                              {existingAccessLevelsForSelectedUser.join(", ")}
-                            </div>
-                          )}
                         <button
                           className="btn-primary"
                           onClick={handleAddMember}
@@ -825,7 +1028,7 @@ export default function Groups() {
                             newAccessLevelsToAdd.length === 0
                           }
                         >
-                          {addMemberLoading ? "Adding..." : "Add"}
+                          {addMemberLoading ? text.adding : text.add}
                         </button>
                       </div>
                     )}
@@ -835,14 +1038,16 @@ export default function Groups() {
                 {/* שיוך פגישה */}
                 {isAdmin && (
                   <div className="groups-modal-section">
-                    <h4>Meetings ({selectedGroup.meetings?.length ?? 0})</h4>
+                    <h4>
+                      {text.meetings} ({selectedGroup.meetings?.length ?? 0})
+                    </h4>
                     {/* פגישות קיימות בקבוצה */}
                     {selectedGroup.meetings?.length > 0 && (
                       <table className="groups-table">
                         <thead>
                           <tr>
-                            <th>Meeting #</th>
-                            <th>Type</th>
+                            <th>{text.meetingNumber}</th>
+                            <th>{text.type}</th>
                             <th></th>
                           </tr>
                         </thead>
@@ -858,7 +1063,11 @@ export default function Groups() {
                                     ? `#${meeting.m_number}`
                                     : String(mId).slice(0, 8) + "..."}
                                 </td>
-                                <td>{meeting ? meeting.accessLevel : "—"}</td>
+                                <td>
+                                  {meeting
+                                    ? formatAccessLevel(meeting.accessLevel)
+                                    : "—"}
+                                </td>
                                 <td>
                                   <button
                                     className="btn-danger btn-sm"
@@ -866,7 +1075,7 @@ export default function Groups() {
                                       handleRemoveMeeting(String(mId))
                                     }
                                   >
-                                    Remove
+                                    {text.remove}
                                   </button>
                                 </td>
                               </tr>
@@ -876,60 +1085,67 @@ export default function Groups() {
                       </table>
                     )}
                     {/* הוספת פגישה */}
-                    <div
-                      className="groups-add-row"
-                      style={{ marginTop: "8px" }}
-                    >
-                      <input
-                        className="search-input"
-                        type="text"
-                        placeholder="Search meeting by number or type..."
-                        value={searchMeetingText}
-                        onChange={(e) => setSearchMeetingText(e.target.value)}
-                      />
-                      {searchMeetingText &&
-                      filteredAddableMeetings.length > 0 ? (
-                        <select
-                          className="groups-select"
-                          value={addMeetingId}
-                          onChange={(e) => {
-                            setAddMeetingId(e.target.value);
-                            setSearchMeetingText("");
-                          }}
-                          size={Math.min(5, filteredAddableMeetings.length)}
-                        >
-                          <option value="">— Select from results —</option>
-                          {filteredAddableMeetings.map((m) => (
-                            <option key={m.UUID} value={m.UUID}>
-                              #{m.m_number} ({m.accessLevel})
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        searchMeetingText && (
+                    {addableMeetingsForSelectedGroup.length === 0 ? (
+                      <div className="groups-empty">{text.noMeetingsToAdd}</div>
+                    ) : (
+                      <div className="groups-add-row groups-add-meeting-row">
+                        <div className="groups-search-select" role="group">
+                          <input
+                            className="groups-search-select-input"
+                            type="text"
+                            placeholder={text.searchMeetingPlaceholder}
+                            value={searchMeetingText}
+                            onChange={(e) => setSearchMeetingText(e.target.value)}
+                            aria-label="Search meetings"
+                          />
                           <div
-                            className="groups-empty"
-                            style={{ padding: "8px" }}
+                            className="groups-search-select-list"
+                            role="listbox"
+                            aria-label="Available meetings"
                           >
-                            No matching meetings.
+                            {filteredAddableMeetings.length > 0 ? (
+                              filteredAddableMeetings.map((m) => {
+                                const selected =
+                                  String(addMeetingId) === String(m.UUID);
+                                return (
+                                  <button
+                                    key={m.UUID}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={selected}
+                                    className={`groups-search-select-option ${selected ? "is-selected" : ""}`}
+                                    onClick={() => {
+                                      setAddMeetingId(m.UUID);
+                                      setSearchMeetingText("");
+                                    }}
+                                  >
+                                    #{m.m_number} ({formatAccessLevel(m.accessLevel)})
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <div
+                                className="groups-empty"
+                                style={{ padding: "8px" }}
+                              >
+                                {searchMeetingText
+                                  ? text.noMatchingMeetings
+                                  : ""}
+                              </div>
+                            )}
                           </div>
-                        )
-                      )}
-                      <button
-                        className="btn-primary"
-                        onClick={handleAddMeeting}
-                        disabled={
-                          addMeetingLoading ||
-                          !addMeetingId ||
-                          addableMeetingsForSelectedGroup.length === 0
-                        }
-                      >
-                        {addMeetingLoading ? "Adding..." : "Add"}
-                      </button>
-                    </div>
-                    {addableMeetingsForSelectedGroup.length === 0 && (
-                      <div className="groups-empty">
-                        No meetings available to add.
+                        </div>
+                        <button
+                          className="btn-primary"
+                          onClick={handleAddMeeting}
+                          disabled={
+                            addMeetingLoading ||
+                            !addMeetingId ||
+                            addableMeetingsForSelectedGroup.length === 0
+                          }
+                        >
+                          {addMeetingLoading ? text.adding : text.add}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -939,6 +1155,84 @@ export default function Groups() {
           </div>
         </div>
       )}
+
+      {showDeleteGroupConfirm && groupToDelete ? (
+        <div className="modal-overlay" onClick={closeDeleteGroupConfirm}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">{text.deleteGroupModalTitle}</h3>
+            <p
+              style={{
+                marginBottom: "20px",
+                color: "#d32f2f",
+                fontWeight: "500",
+              }}
+            >
+              {text.deleteGroupModalMessage} "{groupToDelete.name}"?
+            </p>
+
+            <div className="modal-actions">
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={closeDeleteGroupConfirm}
+                disabled={deleteGroupLoading}
+              >
+                {text.cancel}
+              </button>
+              <button
+                className="btn-danger"
+                type="button"
+                onClick={confirmDeleteGroup}
+                disabled={deleteGroupLoading}
+              >
+                {deleteGroupLoading ? text.deletingGroup : text.delete}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showRemoveMemberConfirm && memberToRemove ? (
+        <div className="modal-overlay" onClick={closeRemoveMemberConfirm}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">{text.removeMemberModalTitle}</h3>
+            <p
+              style={{
+                marginBottom: "20px",
+                color: "#d32f2f",
+                fontWeight: "500",
+              }}
+            >
+              {text.removeMemberModalMessage} "{memberToRemove.username}"?
+            </p>
+
+            <div className="modal-actions">
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={closeRemoveMemberConfirm}
+                disabled={
+                  removeMemberLoadingId === String(memberToRemove.userId)
+                }
+              >
+                {text.cancel}
+              </button>
+              <button
+                className="btn-danger"
+                type="button"
+                onClick={confirmRemoveMember}
+                disabled={
+                  removeMemberLoadingId === String(memberToRemove.userId)
+                }
+              >
+                {removeMemberLoadingId === String(memberToRemove.userId)
+                  ? text.removingUser
+                  : text.removeUser}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

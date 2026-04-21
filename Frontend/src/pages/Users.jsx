@@ -11,8 +11,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { userAPI } from "../services/api";
 
-export default function Users() {
+export default function Users({ language = "en" }) {
   const { currentUser } = useAuth();
+  const isHebrew = language === "he";
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState("");
@@ -51,6 +52,54 @@ export default function Users() {
     currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const canDeleteUsers =
     currentUser?.role === "super_admin" || currentUser?.role === "admin";
+
+  const text = {
+    pageTitle: isHebrew ? "משתמשים" : "Users",
+    createTitle: isHebrew ? "יצירת משתמש חדש" : "Create New User",
+    sidPlaceholder: "S_ID",
+    usernamePlaceholder: isHebrew ? "שם משתמש" : "Username",
+    passwordPlaceholder: isHebrew ? "סיסמה" : "Password",
+    createButton: submitting
+      ? isHebrew
+        ? "יוצר..."
+        : "Creating..."
+      : isHebrew
+        ? "צור משתמש"
+        : "Create User",
+    directoryTitle: isHebrew ? "רשימת משתמשים" : "Users Directory",
+    searchPlaceholder: isHebrew
+      ? "חיפוש לפי S_ID או שם משתמש"
+      : "Search by S_ID or username",
+    roleFilterAll: isHebrew ? "כל התפקידים" : "Type Role",
+    refresh: isHebrew ? "רענון" : "Refresh",
+    loadingUsers: isHebrew ? "טוען משתמשים..." : "Loading users...",
+    noUsers: isHebrew
+      ? "לא נמצאו משתמשים לפי הסינון הזה."
+      : "No users found for this filter.",
+    sidLabel: "S_ID",
+    edit: isHebrew ? "עריכה" : "Edit",
+    editTitle: isHebrew ? "ערוך משתמש" : "Edit user",
+    delete: isHebrew ? "מחיקה" : "Delete",
+    deleteTitle: isHebrew ? "מחק משתמש" : "Delete user",
+    deleting: isHebrew ? "מוחק..." : "Deleting...",
+    deleteModalTitle: isHebrew ? "מחיקת משתמש" : "Delete User",
+    deleteModalMessage: isHebrew
+      ? "האם למחוק את המשתמש"
+      : "Are you sure you want to delete user",
+    cancel: isHebrew ? "ביטול" : "Cancel",
+    deleteUser: isHebrew ? "מחק משתמש" : "Delete User",
+    editModalTitle: isHebrew ? "עריכת משתמש" : "Edit User",
+    newPasswordPlaceholder: isHebrew
+      ? "סיסמה חדשה (אם לא משנים משאירים ריק)"
+      : "New Password (leave blank to keep)",
+    updateUser: editSubmitting
+      ? isHebrew
+        ? "מעדכן..."
+        : "Updating..."
+      : isHebrew
+        ? "עדכן משתמש"
+        : "Update User",
+  };
 
   const roleOptions = useMemo(() => {
     if (currentUser?.role === "super_admin") {
@@ -94,7 +143,10 @@ export default function Users() {
       setUsers(response.data || []);
     } catch (err) {
       setUsers([]);
-      setUsersError(err.response?.data?.detail || "Failed to load users.");
+      setUsersError(
+        err.response?.data?.detail ||
+          (isHebrew ? "טעינת המשתמשים נכשלה." : "Failed to load users."),
+      );
     } finally {
       setUsersLoading(false);
     }
@@ -113,7 +165,11 @@ export default function Users() {
     e.preventDefault();
 
     if (!canCreateUsers) {
-      setCreateError("You are not allowed to create users.");
+      setCreateError(
+        isHebrew
+          ? "אין לך הרשאה ליצור משתמשים."
+          : "You are not allowed to create users.",
+      );
       return;
     }
 
@@ -122,12 +178,18 @@ export default function Users() {
       !formData.username.trim() ||
       !formData.password.trim()
     ) {
-      setCreateError("All fields are required.");
+      setCreateError(
+        isHebrew ? "חובה למלא את כל השדות." : "All fields are required.",
+      );
       return;
     }
 
     if (!roleOptions.includes(formData.role)) {
-      setCreateError("You are not allowed to create this role.");
+      setCreateError(
+        isHebrew
+          ? "אין לך הרשאה ליצור את התפקיד הזה."
+          : "You are not allowed to create this role.",
+      );
       return;
     }
 
@@ -150,7 +212,11 @@ export default function Users() {
         await userAPI.createAgent(payload);
       }
 
-      setCreateSuccess(`${formData.role} user created successfully.`);
+      setCreateSuccess(
+        isHebrew
+          ? `המשתמש נוצר בהצלחה עם תפקיד ${formData.role}.`
+          : `${formData.role} user created successfully.`,
+      );
       setFormData({
         s_id: "",
         username: "",
@@ -159,7 +225,10 @@ export default function Users() {
       });
       await fetchUsers();
     } catch (err) {
-      setCreateError(err.response?.data?.detail || "Failed to create user.");
+      setCreateError(
+        err.response?.data?.detail ||
+          (isHebrew ? "יצירת המשתמש נכשלה." : "Failed to create user."),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -191,7 +260,11 @@ export default function Users() {
 
   const openEditModal = (user) => {
     if (!canEditUser(user)) {
-      setEditError("You are not allowed to edit this user.");
+      setEditError(
+        isHebrew
+          ? "אין לך הרשאה לערוך את המשתמש הזה."
+          : "You are not allowed to edit this user.",
+      );
       return;
     }
 
@@ -222,12 +295,14 @@ export default function Users() {
     e.preventDefault();
 
     if (!editingUser) {
-      setEditError("No user selected for editing.");
+      setEditError(
+        isHebrew ? "לא נבחר משתמש לעריכה." : "No user selected for editing.",
+      );
       return;
     }
 
     if (!editFormData.username.trim()) {
-      setEditError("Username is required.");
+      setEditError(isHebrew ? "חובה להזין שם משתמש." : "Username is required.");
       return;
     }
 
@@ -249,11 +324,16 @@ export default function Users() {
             : undefined,
       });
 
-      setEditSuccess("User updated successfully.");
+      setEditSuccess(
+        isHebrew ? "המשתמש עודכן בהצלחה." : "User updated successfully.",
+      );
       await fetchUsers();
       setTimeout(closeEditModal, 1500);
     } catch (err) {
-      setEditError(err.response?.data?.detail || "Failed to update user.");
+      setEditError(
+        err.response?.data?.detail ||
+          (isHebrew ? "עדכון המשתמש נכשל." : "Failed to update user."),
+      );
     } finally {
       setEditSubmitting(false);
     }
@@ -261,7 +341,11 @@ export default function Users() {
 
   const openDeleteConfirm = (targetUser) => {
     if (!canDeleteTarget(targetUser)) {
-      setDeleteError("You are not allowed to delete this user.");
+      setDeleteError(
+        isHebrew
+          ? "אין לך הרשאה למחוק את המשתמש הזה."
+          : "You are not allowed to delete this user.",
+      );
       return;
     }
     setUserToDelete(targetUser);
@@ -282,11 +366,18 @@ export default function Users() {
       setDeleteSuccess("");
 
       await userAPI.deleteUser(userToDelete.s_id);
-      setDeleteSuccess(`User ${userToDelete.username} deleted successfully.`);
+      setDeleteSuccess(
+        isHebrew
+          ? `המשתמש ${userToDelete.username} נמחק בהצלחה.`
+          : `User ${userToDelete.username} deleted successfully.`,
+      );
       await fetchUsers();
       closeDeleteConfirm();
     } catch (err) {
-      setDeleteError(err.response?.data?.detail || "Failed to delete user.");
+      setDeleteError(
+        err.response?.data?.detail ||
+          (isHebrew ? "מחיקת המשתמש נכשלה." : "Failed to delete user."),
+      );
     } finally {
       setDeleteLoadingSid("");
     }
@@ -325,18 +416,18 @@ export default function Users() {
 
   return (
     <div className="page">
-      <h2 className="page-header">Users</h2>
+      <h2 className="page-header">{text.pageTitle}</h2>
 
       {canCreateUsers ? (
         <div className="card">
-          <h3 className="card-title">Create New User</h3>
+          <h3 className="card-title">{text.createTitle}</h3>
           <form className="user-create-form" onSubmit={handleSubmit}>
             <div className="user-form-grid">
               <input
                 className="search-input"
                 type="text"
                 name="s_id"
-                placeholder="S_ID"
+                placeholder={text.sidPlaceholder}
                 value={formData.s_id}
                 onChange={handleChange}
                 required
@@ -345,7 +436,7 @@ export default function Users() {
                 className="search-input"
                 type="text"
                 name="username"
-                placeholder="Username"
+                placeholder={text.usernamePlaceholder}
                 value={formData.username}
                 onChange={handleChange}
                 required
@@ -354,7 +445,7 @@ export default function Users() {
                 className="search-input"
                 type="password"
                 name="password"
-                placeholder="Password"
+                placeholder={text.passwordPlaceholder}
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -378,7 +469,7 @@ export default function Users() {
               type="submit"
               disabled={submitting}
             >
-              {submitting ? "Creating..." : "Create User"}
+              {text.createButton}
             </button>
           </form>
 
@@ -398,7 +489,7 @@ export default function Users() {
       ) : null}
 
       <div className="card fill">
-        <h3 className="card-title">Users Directory</h3>
+        <h3 className="card-title">{text.directoryTitle}</h3>
 
         <div className="users-filter-row">
           <input
@@ -406,7 +497,7 @@ export default function Users() {
             type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Search by S_ID or username"
+            placeholder={text.searchPlaceholder}
           />
 
           <select
@@ -414,7 +505,7 @@ export default function Users() {
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
           >
-            <option value="all">Type Role</option>
+            <option value="all">{text.roleFilterAll}</option>
             {currentUser?.role === "super_admin" ? (
               <option value="super_admin">super_admin</option>
             ) : null}
@@ -423,8 +514,12 @@ export default function Users() {
             <option value="viewer">viewer</option>
           </select>
 
-          <button className="btn-secondary refresh-soft-button" type="button" onClick={fetchUsers}>
-            Refresh
+          <button
+            className="btn-secondary refresh-soft-button"
+            type="button"
+            onClick={fetchUsers}
+          >
+            {text.refresh}
           </button>
         </div>
 
@@ -432,9 +527,9 @@ export default function Users() {
 
         <div className="meetings-list">
           {usersLoading ? (
-            <div className="empty-state">Loading users...</div>
+            <div className="empty-state">{text.loadingUsers}</div>
           ) : visibleUsers.length === 0 ? (
-            <div className="empty-state">No users found for this filter.</div>
+            <div className="empty-state">{text.noUsers}</div>
           ) : (
             visibleUsers.map((user) => (
               <div key={user.UUID} className="meeting-row">
@@ -445,18 +540,21 @@ export default function Users() {
                       {user.role}
                     </span>
                   </div>
-                  <div className="meeting-meta">S_ID: {user.s_id}</div>
+                  <div className="meeting-meta">
+                    {text.sidLabel}: {user.s_id}
+                  </div>
                 </div>
-                {canCreateUsers && (canEditUser(user) || canDeleteTarget(user)) ? (
+                {canCreateUsers &&
+                (canEditUser(user) || canDeleteTarget(user)) ? (
                   <div className="meeting-actions">
                     {canEditUser(user) ? (
                       <button
                         className="btn-secondary edit-soft-button"
                         type="button"
                         onClick={() => openEditModal(user)}
-                        title="Edit user"
+                        title={text.editTitle}
                       >
-                        Edit
+                        {text.edit}
                       </button>
                     ) : null}
                     {canDeleteUsers && canDeleteTarget(user) ? (
@@ -465,11 +563,11 @@ export default function Users() {
                         type="button"
                         onClick={() => openDeleteConfirm(user)}
                         disabled={deleteLoadingSid === user.s_id}
-                        title="Delete user"
+                        title={text.deleteTitle}
                       >
                         {deleteLoadingSid === user.s_id
-                          ? "Deleting..."
-                          : "Delete"}
+                          ? text.deleting
+                          : text.delete}
                       </button>
                     ) : null}
                   </div>
@@ -483,7 +581,7 @@ export default function Users() {
       {showDeleteConfirm && userToDelete ? (
         <div className="modal-overlay" onClick={closeDeleteConfirm}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">Delete User</h3>
+            <h3 className="modal-title">{text.deleteModalTitle}</h3>
             <p
               style={{
                 marginBottom: "20px",
@@ -491,9 +589,8 @@ export default function Users() {
                 fontWeight: "500",
               }}
             >
-              Are you sure you want to delete user "{userToDelete.username}"?
+              {text.deleteModalMessage} "{userToDelete.username}"?
             </p>
-           
 
             <div className="modal-actions">
               <button
@@ -502,7 +599,7 @@ export default function Users() {
                 onClick={closeDeleteConfirm}
                 disabled={deleteLoadingSid === userToDelete.s_id}
               >
-                Cancel
+                {text.cancel}
               </button>
               <button
                 className="btn-danger"
@@ -511,8 +608,8 @@ export default function Users() {
                 disabled={deleteLoadingSid === userToDelete.s_id}
               >
                 {deleteLoadingSid === userToDelete.s_id
-                  ? "Deleting..."
-                  : "Delete User"}
+                  ? text.deleting
+                  : text.deleteUser}
               </button>
             </div>
           </div>
@@ -522,7 +619,9 @@ export default function Users() {
       {editingUser ? (
         <div className="modal-overlay" onClick={closeEditModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">Edit User: {editingUser.username}</h3>
+            <h3 className="modal-title">
+              {text.editModalTitle}: {editingUser.username}
+            </h3>
 
             <form className="user-create-form" onSubmit={handleEditSubmit}>
               <div className="user-form-grid">
@@ -530,7 +629,7 @@ export default function Users() {
                   className="search-input"
                   type="text"
                   name="s_id"
-                  placeholder="S_ID"
+                  placeholder={text.sidPlaceholder}
                   value={editFormData.s_id}
                   onChange={handleEditChange}
                 />
@@ -538,7 +637,7 @@ export default function Users() {
                   className="search-input"
                   type="text"
                   name="username"
-                  placeholder="Username"
+                  placeholder={text.usernamePlaceholder}
                   value={editFormData.username}
                   onChange={handleEditChange}
                   required
@@ -547,7 +646,7 @@ export default function Users() {
                   className="search-input"
                   type="password"
                   name="password"
-                  placeholder="New Password (leave blank to keep)"
+                  placeholder={text.newPasswordPlaceholder}
                   value={editFormData.password}
                   onChange={handleEditChange}
                 />
@@ -572,14 +671,14 @@ export default function Users() {
                   onClick={closeEditModal}
                   disabled={editSubmitting}
                 >
-                  Cancel
+                  {text.cancel}
                 </button>
                 <button
                   className="search-button"
                   type="submit"
                   disabled={editSubmitting}
                 >
-                  {editSubmitting ? "Updating..." : "Update User"}
+                  {text.updateUser}
                 </button>
               </div>
             </form>

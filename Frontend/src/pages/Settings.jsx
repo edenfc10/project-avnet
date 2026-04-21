@@ -20,6 +20,12 @@ const ACCESS_LEVEL_TO_SECTION = {
   blast_dial: "blast-dial",
 };
 
+const ACCESS_LEVEL_HE_LABEL = {
+  audio: "ועידות אודיו",
+  video: "ועידות וידאו",
+  blast_dial: "ועידות הזנקה",
+};
+
 const createEmptySection = () => ({
   serverName: "",
   ipAddress: "",
@@ -47,11 +53,14 @@ const createEditDraft = (server) => ({
   accessLevel: server.accessLevel,
 });
 
-export default function Reports() {
+export default function Reports({ language = "en" }) {
   const { currentUser } = useAuth();
+  const isHebrew = language === "he";
   const isSuperAdmin = currentUser?.role === "super_admin";
   const [settings, setSettings] = useState(createDefaultSettings);
-  const [selectedSections, setSelectedSections] = useState(createDefaultSelection);
+  const [selectedSections, setSelectedSections] = useState(
+    createDefaultSelection,
+  );
   const [servers, setServers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +69,65 @@ export default function Reports() {
   const [saveSuccess, setSaveSuccess] = useState("");
   const [editingServerUuid, setEditingServerUuid] = useState("");
   const [editDraft, setEditDraft] = useState(null);
+
+  const text = {
+    pageTitle: isHebrew ? "הגדרות" : "Settings",
+    readonlyBanner: isHebrew
+      ? "רק super_admin יכול לנהל הגדרות שרתים."
+      : "only super_admin can manage server settings.",
+    add: isHebrew ? "הוספה" : "add",
+    serverName: isHebrew ? "שם שרת" : "server name",
+    ipAddress: isHebrew ? "כתובת IP" : "IP address",
+    username: isHebrew ? "שם משתמש" : "username",
+    password: isHebrew ? "סיסמה" : "password",
+    addServers: isHebrew ? "הוסף שרתים" : "add servers",
+    saving: isHebrew ? "שומר..." : "saving...",
+    servers: isHebrew ? "שרתים" : "Servers",
+    refresh: isHebrew ? "רענון" : "refresh",
+    loading: isHebrew ? "טוען..." : "loading...",
+    type: isHebrew ? "סוג" : "type",
+    actions: isHebrew ? "פעולות" : "actions",
+    loadingServers: isHebrew ? "טוען שרתים..." : "Loading servers...",
+    noServers: isHebrew ? "עדיין לא נמצאו שרתים." : "No servers found yet.",
+    save: isHebrew ? "שמור" : "save",
+    cancel: isHebrew ? "ביטול" : "cancel",
+    edit: isHebrew ? "עריכה" : "edit",
+    delete: isHebrew ? "מחיקה" : "delete",
+    loadServersError: isHebrew
+      ? "טעינת השרתים נכשלה."
+      : "Failed to load servers.",
+    onlySuperAdmin: isHebrew
+      ? "רק super_admin יכול לנהל שרתים."
+      : "Only super_admin can manage servers.",
+    selectSection: isHebrew
+      ? "יש לסמן לפחות סוג שרת אחד לפני יצירה."
+      : "Mark at least one server section before creating servers.",
+    allFieldsFor: isHebrew
+      ? "חובה למלא את כל השדות עבור שרת"
+      : "All fields are required for",
+    oneServerAdded: isHebrew
+      ? "השרת נוסף בהצלחה."
+      : "Server added successfully.",
+    manyServersAddedSuffix: isHebrew
+      ? "שרתים נוספו בהצלחה."
+      : "servers added successfully.",
+    addServerError: isHebrew ? "הוספת השרת נכשלה." : "Failed to add server.",
+    allFieldsForUpdate: isHebrew
+      ? "חובה למלא את כל השדות בעת עדכון שרת."
+      : "All fields are required when updating a server.",
+    updated: isHebrew ? "השרת עודכן בהצלחה." : "Server updated successfully.",
+    updateError: isHebrew ? "עדכון השרת נכשל." : "Failed to update server.",
+    deleteConfirm: isHebrew ? "למחוק את השרת הזה?" : "Delete this server?",
+    deleted: isHebrew ? "השרת נמחק בהצלחה." : "Server deleted successfully.",
+    deleteError: isHebrew ? "מחיקת השרת נכשלה." : "Failed to delete server.",
+  };
+
+  const formatAccessLabel = (value) => {
+    if (!isHebrew) {
+      return ACCESS_LEVEL_TO_SECTION[value] || value;
+    }
+    return ACCESS_LEVEL_HE_LABEL[value] || value;
+  };
 
   const loadServers = async () => {
     if (!isSuperAdmin) {
@@ -74,7 +142,7 @@ export default function Reports() {
       setServers(Array.isArray(response.data) ? response.data : []);
       setListError("");
     } catch (error) {
-      setListError(error?.response?.data?.detail || "Failed to load servers.");
+      setListError(error?.response?.data?.detail || text.loadServersError);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +182,7 @@ export default function Reports() {
 
   const handleSave = async () => {
     if (!isSuperAdmin) {
-      setSaveError("Only super_admin can manage servers.");
+      setSaveError(text.onlySuperAdmin);
       setSaveSuccess("");
       return;
     }
@@ -124,7 +192,7 @@ export default function Reports() {
     );
 
     if (sectionsToCreate.length === 0) {
-      setSaveError("Mark at least one server section before creating servers.");
+      setSaveError(text.selectSection);
       setSaveSuccess("");
       return;
     }
@@ -135,7 +203,11 @@ export default function Reports() {
     });
 
     if (incompleteSection) {
-      setSaveError(`All fields are required for ${incompleteSection.label} server.`);
+      setSaveError(
+        isHebrew
+          ? `${text.allFieldsFor} ${incompleteSection.label}.`
+          : `All fields are required for ${incompleteSection.label} server.`,
+      );
       setSaveSuccess("");
       return;
     }
@@ -166,12 +238,12 @@ export default function Reports() {
       await loadServers();
       setSaveSuccess(
         payloads.length === 1
-          ? "Server added successfully."
-          : `${payloads.length} servers added successfully.`,
+          ? text.oneServerAdded
+          : `${payloads.length} ${text.manyServersAddedSuffix}`,
       );
       setSaveError("");
     } catch (error) {
-      setSaveError(error?.response?.data?.detail || "Failed to add server.");
+      setSaveError(error?.response?.data?.detail || text.addServerError);
       setSaveSuccess("");
     } finally {
       setIsSubmitting(false);
@@ -208,7 +280,7 @@ export default function Reports() {
     ].some((value) => !value.trim());
 
     if (hasMissingField) {
-      setSaveError("All fields are required when updating a server.");
+      setSaveError(text.allFieldsForUpdate);
       setSaveSuccess("");
       return;
     }
@@ -224,10 +296,10 @@ export default function Reports() {
       });
       await loadServers();
       cancelEditing();
-      setSaveSuccess("Server updated successfully.");
+      setSaveSuccess(text.updated);
       setSaveError("");
     } catch (error) {
-      setSaveError(error?.response?.data?.detail || "Failed to update server.");
+      setSaveError(error?.response?.data?.detail || text.updateError);
       setSaveSuccess("");
     } finally {
       setIsSubmitting(false);
@@ -235,7 +307,7 @@ export default function Reports() {
   };
 
   const handleDeleteServer = async (serverUuid) => {
-    if (!window.confirm("Delete this server?")) {
+    if (!window.confirm(text.deleteConfirm)) {
       return;
     }
 
@@ -246,10 +318,10 @@ export default function Reports() {
       if (editingServerUuid === serverUuid) {
         cancelEditing();
       }
-      setSaveSuccess("Server deleted successfully.");
+      setSaveSuccess(text.deleted);
       setSaveError("");
     } catch (error) {
-      setSaveError(error?.response?.data?.detail || "Failed to delete server.");
+      setSaveError(error?.response?.data?.detail || text.deleteError);
       setSaveSuccess("");
     } finally {
       setIsSubmitting(false);
@@ -283,12 +355,12 @@ export default function Reports() {
 
   return (
     <div className="page settings-page">
-      <h2 className="page-header">Settings</h2>
+      <h2 className="page-header">{text.pageTitle}</h2>
 
       <div className="card settings-form-card">
         {!isSuperAdmin ? (
           <div className="error-banner reports-readonly-banner">
-            only super_admin can manage server settings.
+            {text.readonlyBanner}
           </div>
         ) : null}
 
@@ -308,8 +380,13 @@ export default function Reports() {
                     marginBottom: "10px",
                   }}
                 >
-                  <h4 className="reports-section-title" style={{ marginBottom: 0 }}>
-                    {section.label}
+                  <h4
+                    className="reports-section-title"
+                    style={{ marginBottom: 0 }}
+                  >
+                    {isHebrew
+                      ? formatAccessLabel(SECTION_TO_ACCESS_LEVEL[section.key])
+                      : section.label}
                   </h4>
                   <label
                     style={{
@@ -323,11 +400,14 @@ export default function Reports() {
                       type="checkbox"
                       checked={Boolean(isChecked)}
                       onChange={(event) =>
-                        toggleSectionSelection(section.key, event.target.checked)
+                        toggleSectionSelection(
+                          section.key,
+                          event.target.checked,
+                        )
                       }
                       disabled={!isSuperAdmin || isSubmitting}
                     />
-                    add
+                    {text.add}
                   </label>
                 </div>
 
@@ -335,7 +415,7 @@ export default function Reports() {
                   <input
                     className="search-input"
                     type="text"
-                    placeholder="server name"
+                    placeholder={text.serverName}
                     value={sectionData.serverName}
                     onChange={(e) =>
                       handleChange(section.key, "serverName", e.target.value)
@@ -346,7 +426,7 @@ export default function Reports() {
                   <input
                     className="search-input"
                     type="text"
-                    placeholder="IP address"
+                    placeholder={text.ipAddress}
                     value={sectionData.ipAddress}
                     onChange={(e) =>
                       handleChange(section.key, "ipAddress", e.target.value)
@@ -357,7 +437,7 @@ export default function Reports() {
                   <input
                     className="search-input"
                     type="text"
-                    placeholder="username"
+                    placeholder={text.username}
                     value={sectionData.username}
                     onChange={(e) =>
                       handleChange(section.key, "username", e.target.value)
@@ -368,7 +448,7 @@ export default function Reports() {
                   <input
                     className="search-input"
                     type="password"
-                    placeholder="password"
+                    placeholder={text.password}
                     value={sectionData.password}
                     onChange={(e) =>
                       handleChange(section.key, "password", e.target.value)
@@ -393,7 +473,7 @@ export default function Reports() {
             onClick={handleSave}
             disabled={!isSuperAdmin || isSubmitting}
           >
-            {isSubmitting ? "saving..." : "add servers"}
+            {isSubmitting ? text.saving : text.addServers}
           </button>
         </div>
       </div>
@@ -401,14 +481,14 @@ export default function Reports() {
       {isSuperAdmin ? (
         <div className="card reports-servers-card settings-servers-card">
           <div className="reports-table-header-row">
-            <h3 className="card-title">Servers</h3>
+            <h3 className="card-title">{text.servers}</h3>
             <button
               className="search-button reports-refresh-button"
               type="button"
               onClick={loadServers}
               disabled={isLoading || isSubmitting}
             >
-              {isLoading ? "loading..." : "refresh"}
+              {isLoading ? text.loading : text.refresh}
             </button>
           </div>
 
@@ -418,12 +498,12 @@ export default function Reports() {
             <table className="reports-servers-table">
               <thead>
                 <tr>
-                  <th>type</th>
-                  <th>server name</th>
-                  <th>IP address</th>
-                  <th>username</th>
-                  <th>password</th>
-                  <th>actions</th>
+                  <th>{text.type}</th>
+                  <th>{text.serverName}</th>
+                  <th>{text.ipAddress}</th>
+                  <th>{text.username}</th>
+                  <th>{text.password}</th>
+                  <th>{text.actions}</th>
                 </tr>
               </thead>
 
@@ -431,9 +511,7 @@ export default function Reports() {
                 {servers.length === 0 ? (
                   <tr>
                     <td className="reports-empty-row" colSpan={6}>
-                      {isLoading
-                        ? "Loading servers..."
-                        : "No servers found yet."}
+                      {isLoading ? text.loadingServers : text.noServers}
                     </td>
                   </tr>
                 ) : (
@@ -460,8 +538,7 @@ export default function Reports() {
                               <option value="blast_dial">blast-dial</option>
                             </select>
                           ) : (
-                            ACCESS_LEVEL_TO_SECTION[server.accessLevel] ||
-                            server.accessLevel
+                            formatAccessLabel(server.accessLevel)
                           )}
                         </td>
                         <td>
@@ -536,7 +613,7 @@ export default function Reports() {
                                   onClick={handleUpdateServer}
                                   disabled={isSubmitting}
                                 >
-                                  save
+                                  {text.save}
                                 </button>
                                 <button
                                   className="reports-secondary-button"
@@ -544,7 +621,7 @@ export default function Reports() {
                                   onClick={cancelEditing}
                                   disabled={isSubmitting}
                                 >
-                                  cancel
+                                  {text.cancel}
                                 </button>
                               </>
                             ) : (
@@ -555,7 +632,7 @@ export default function Reports() {
                                   onClick={() => startEditing(server)}
                                   disabled={isSubmitting}
                                 >
-                                  edit
+                                  {text.edit}
                                 </button>
                                 <button
                                   className="reports-danger-button"
@@ -565,7 +642,7 @@ export default function Reports() {
                                   }
                                   disabled={isSubmitting}
                                 >
-                                  delete
+                                  {text.delete}
                                 </button>
                               </>
                             )}

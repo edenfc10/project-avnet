@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import MeetingsPage from "../components/MeetingsPage";
 import { favoriteAPI, meetingAPI } from "../services/api";
 
-export default function AudioMeetings() {
+export default function AudioMeetings({ language = "en" }) {
+  const isHebrew = language === "he";
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,26 +26,31 @@ export default function AudioMeetings() {
       const all = response.data || [];
       setMeetings(
         all.map((m) => ({
-            id: m.UUID,
-            dbId: m.UUID,
-            meetingId: String(m.m_number || ""),
-            accessLevel: m.accessLevel || "audio",
-            password: m.password || "",
-            group: m.groups?.length ? m.groups[0] : "",
-            status: "",
-            isFavorite: favoriteSet.has(m.UUID),
-            onToggleFavorite: async (meeting) => {
-              if (meeting.isFavorite) {
-                await favoriteAPI.removeFavoriteMeeting(meeting.dbId);
-              } else {
-                await favoriteAPI.addFavoriteMeeting(meeting.dbId);
-              }
-              await loadMeetings();
-            },
-          }))
+          id: m.UUID,
+          dbId: m.UUID,
+          meetingId: String(m.m_number || ""),
+          accessLevel: m.accessLevel || "audio",
+          password: m.password || "",
+          group: m.groups?.length ? m.groups[0] : "",
+          status: "",
+          isFavorite: favoriteSet.has(m.UUID),
+          onToggleFavorite: async (meeting) => {
+            if (meeting.isFavorite) {
+              await favoriteAPI.removeFavoriteMeeting(meeting.dbId);
+            } else {
+              await favoriteAPI.addFavoriteMeeting(meeting.dbId);
+            }
+            await loadMeetings();
+          },
+        })),
       );
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to load audio meetings.");
+      setError(
+        err.response?.data?.detail ||
+          (isHebrew
+            ? "טעינת ועידות האודיו נכשלה."
+            : "Failed to load audio meetings."),
+      );
       setMeetings([]);
     } finally {
       setLoading(false);
@@ -57,8 +63,9 @@ export default function AudioMeetings() {
 
   return (
     <MeetingsPage
-      title="Audio Meetings"
+      title={isHebrew ? "ועידות אודיו" : "Audio Meetings"}
       accessLevel="audio"
+      language={language}
       data={meetings}
       loading={loading}
       error={error}

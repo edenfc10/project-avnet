@@ -31,8 +31,55 @@ function buildHistorySeries(current, seedText) {
   return result;
 }
 
-export default function Reports() {
+export default function Reports({ language = "en" }) {
   const { currentUser } = useAuth();
+  const isHebrew = language === "he";
+
+  const text = {
+    loadReportsError: isHebrew
+      ? "טעינת נתוני הדוחות נכשלה."
+      : "Failed to load reports data.",
+    pageTitle: isHebrew ? "דוחות" : "Reports",
+    refresh: isHebrew ? "רענון" : "Refresh",
+    loadingReports: isHebrew ? "טוען דוחות..." : "Loading reports...",
+    latestUploadTitle: isHebrew
+      ? "הוועידה האחרונה שעלתה"
+      : "Last Meeting Upload",
+    meetingPrefix: isHebrew ? "ועידה" : "Meeting",
+    lastActivity: isHebrew ? "פעילות אחרונה" : "Last activity",
+    noMeetingActivity: isHebrew
+      ? "עדיין אין נתוני פעילות על ועידות."
+      : "No meeting activity data available yet.",
+    allMeetingsTitle: isHebrew
+      ? "כל הוועידות עם סיסמה וקבוצה"
+      : "All Meetings With Password And Group",
+    noMeetingsFound: isHebrew ? "לא נמצאו ועידות." : "No meetings found.",
+    tableMeeting: isHebrew ? "ועידה" : "Meeting",
+    tableType: isHebrew ? "סוג" : "Type",
+    tablePassword: isHebrew ? "סיסמה" : "Password",
+    tableGroup: isHebrew ? "קבוצה" : "Group",
+    noGroup: isHebrew ? "ללא קבוצה" : "No group",
+    participantsTitle: isHebrew ? "דוח משתתפים" : "Participants Report",
+    now: isHebrew ? "כרגע" : "Now",
+    pastSamples: isHebrew ? "7 דגימות אחרונות" : "Past 7 samples",
+    userMembershipTitle: isHebrew
+      ? "דוח שיוך משתמש לוועידות"
+      : "User Meeting Membership Report",
+    selectUser: isHebrew ? "בחר משתמש..." : "Select user...",
+    selectUserHint: isHebrew
+      ? "בחר משתמש כדי לראות ועידות קשורות."
+      : "Select a user to see related meetings.",
+    userNoMeetings: isHebrew
+      ? "המשתמש הזה עדיין לא משויך לאף ועידה."
+      : "This user is not linked to any meeting yet.",
+    groupLabel: isHebrew ? "קבוצה" : "Group",
+    unusedTitle: isHebrew ? "ועידות שלא בשימוש" : "Unused Meetings",
+    noUnused: isHebrew
+      ? "לא זוהו ועידות לא פעילות."
+      : "No unused meetings detected.",
+    unusedTag: isHebrew ? "לא בשימוש" : "Unused",
+    never: isHebrew ? "מעולם לא" : "Never",
+  };
 
   // Only super_admin and admin can access reports
   if (!["super_admin", "admin"].includes(currentUser?.role)) {
@@ -96,10 +143,10 @@ export default function Reports() {
         usersResp.status === "rejected";
 
       if (allFailed) {
-        setError("Failed to load reports data.");
+        setError(text.loadReportsError);
       }
     } catch {
-      setError("Failed to load reports data.");
+      setError(text.loadReportsError);
     } finally {
       setLoading(false);
     }
@@ -194,7 +241,7 @@ export default function Reports() {
 
   return (
     <div className="page reports-page">
-      <h2 className="page-header">Reports</h2>
+      <h2 className="page-header">{text.pageTitle}</h2>
 
       <div className="reports-actions">
         <button
@@ -202,23 +249,25 @@ export default function Reports() {
           type="button"
           onClick={loadReports}
         >
-          Refresh
+          {text.refresh}
         </button>
       </div>
 
-      {loading ? <div className="reports-info">Loading reports...</div> : null}
+      {loading ? (
+        <div className="reports-info">{text.loadingReports}</div>
+      ) : null}
       {error ? <div className="reports-error">{error}</div> : null}
 
       <section className="card reports-card">
-        <h3 className="card-title">Last Meeting Upload </h3>
+        <h3 className="card-title">{text.latestUploadTitle}</h3>
         {latestMeeting ? (
           <div className="reports-grid-two">
             <div>
               <div className="reports-value">
-                Meeting #{latestMeeting.meetingNumber}
+                {text.meetingPrefix} #{latestMeeting.meetingNumber}
               </div>
               <div className="reports-sub">
-                Last activity:{" "}
+                {text.lastActivity}:{" "}
                 {new Date(latestMeeting.lastUsedAt).toLocaleString()}
               </div>
             </div>
@@ -227,25 +276,23 @@ export default function Reports() {
             </div>
           </div>
         ) : (
-          <div className="reports-empty">
-            No meeting activity data available yet.
-          </div>
+          <div className="reports-empty">{text.noMeetingActivity}</div>
         )}
       </section>
 
       <section className="card reports-card">
-        <h3 className="card-title">All Meetings With Password And Group</h3>
+        <h3 className="card-title">{text.allMeetingsTitle}</h3>
         {meetingRows.length === 0 ? (
-          <div className="reports-empty">No meetings found.</div>
+          <div className="reports-empty">{text.noMeetingsFound}</div>
         ) : (
           <div className="reports-table-wrap">
             <table className="reports-table">
               <thead>
                 <tr>
-                  <th>Meeting</th>
-                  <th>Type</th>
-                  <th>Password</th>
-                  <th>Group</th>
+                  <th>{text.tableMeeting}</th>
+                  <th>{text.tableType}</th>
+                  <th>{text.tablePassword}</th>
+                  <th>{text.tableGroup}</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,7 +302,7 @@ export default function Reports() {
                     <td>{roleLabel(m.accessLevel)}</td>
                     <td>{m.password}</td>
                     <td>
-                      {m.groups.length ? m.groups.join(", ") : "No group"}
+                      {m.groups.length ? m.groups.join(", ") : text.noGroup}
                     </td>
                   </tr>
                 ))}
@@ -266,21 +313,23 @@ export default function Reports() {
       </section>
 
       <section className="card reports-card">
-        <h3 className="card-title">Participants Report </h3>
+        <h3 className="card-title">{text.participantsTitle}</h3>
         {meetingRows.length === 0 ? (
-          <div className="reports-empty">No meetings found.</div>
+          <div className="reports-empty">{text.noMeetingsFound}</div>
         ) : (
           <div className="reports-list">
             {meetingRows.map((m) => (
               <div className="reports-list-item" key={`${m.uuid}-participants`}>
                 <div className="reports-list-head">
-                  <strong>Meeting #{m.meetingNumber}</strong>
+                  <strong>
+                    {text.meetingPrefix} #{m.meetingNumber}
+                  </strong>
                   <span className="reports-tag reports-tag-soft">
-                    Now: {m.participantsNow}
+                    {text.now}: {m.participantsNow}
                   </span>
                 </div>
                 <div className="reports-sub">
-                  Past 7 samples: {m.history.join(" • ")}
+                  {text.pastSamples}: {m.history.join(" • ")}
                 </div>
               </div>
             ))}
@@ -289,14 +338,14 @@ export default function Reports() {
       </section>
 
       <section className="card reports-card">
-        <h3 className="card-title">User Meeting Membership Report</h3>
+        <h3 className="card-title">{text.userMembershipTitle}</h3>
         <div className="reports-user-filter">
           <select
             className="search-select"
             value={userFilter}
             onChange={(e) => setUserFilter(e.target.value)}
           >
-            <option value="">Select user...</option>
+            <option value="">{text.selectUser}</option>
             {users.map((u) => (
               <option key={u.UUID} value={u.UUID}>
                 {u.username} ({u.s_id}) - {u.role}
@@ -306,25 +355,24 @@ export default function Reports() {
         </div>
 
         {!selectedUser ? (
-          <div className="reports-empty">
-            Select a user to see related meetings.
-          </div>
+          <div className="reports-empty">{text.selectUserHint}</div>
         ) : userMeetingRows.length === 0 ? (
-          <div className="reports-empty">
-            This user is not linked to any meeting yet.
-          </div>
+          <div className="reports-empty">{text.userNoMeetings}</div>
         ) : (
           <div className="reports-list">
             {userMeetingRows.map((m) => (
               <div className="reports-list-item" key={`${m.uuid}-user-map`}>
                 <div className="reports-list-head">
-                  <strong>Meeting #{m.meetingNumber}</strong>
+                  <strong>
+                    {text.meetingPrefix} #{m.meetingNumber}
+                  </strong>
                   <span className="reports-tag">
                     {roleLabel(m.accessLevel)}
                   </span>
                 </div>
                 <div className="reports-sub">
-                  Group: {m.groups.length ? m.groups.join(", ") : "No group"}
+                  {text.groupLabel}:{" "}
+                  {m.groups.length ? m.groups.join(", ") : text.noGroup}
                 </div>
               </div>
             ))}
@@ -333,22 +381,26 @@ export default function Reports() {
       </section>
 
       <section className="card reports-card">
-        <h3 className="card-title">Unused Meetings</h3>
+        <h3 className="card-title">{text.unusedTitle}</h3>
         {unusedMeetings.length === 0 ? (
-          <div className="reports-empty">No unused meetings detected.</div>
+          <div className="reports-empty">{text.noUnused}</div>
         ) : (
           <div className="reports-list">
             {unusedMeetings.map((m) => (
               <div className="reports-list-item" key={`${m.uuid}-unused`}>
                 <div className="reports-list-head">
-                  <strong>Meeting #{m.meetingNumber}</strong>
-                  <span className="reports-tag reports-tag-warn">Unused</span>
+                  <strong>
+                    {text.meetingPrefix} #{m.meetingNumber}
+                  </strong>
+                  <span className="reports-tag reports-tag-warn">
+                    {text.unusedTag}
+                  </span>
                 </div>
                 <div className="reports-sub">
-                  Last activity:{" "}
+                  {text.lastActivity}:{" "}
                   {m.lastUsedAt
                     ? new Date(m.lastUsedAt).toLocaleString()
-                    : "Never"}
+                    : text.never}
                 </div>
               </div>
             ))}

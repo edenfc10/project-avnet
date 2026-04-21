@@ -24,6 +24,7 @@ import {
   Route,
   NavLink,
   Navigate,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
@@ -51,17 +52,23 @@ import Topbar from "./components/Topbar";
 const LANGUAGE_STORAGE_KEY = "meet-control-language";
 
 export default function App() {
+  const location = useLocation();
   const { loading, currentUser } = useAuth();
   const [language, setLanguage] = useState(
     () => localStorage.getItem(LANGUAGE_STORAGE_KEY) || "en",
   );
-  const isRTL = language === "he";
+  const isLoginRoute = location.pathname === "/login";
+  const effectiveLanguage = isLoginRoute ? "en" : language;
+  const isRTL = effectiveLanguage === "he";
 
   useEffect(() => {
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
-    document.documentElement.lang = language;
+    if (!isLoginRoute) {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    }
+
+    document.documentElement.lang = effectiveLanguage;
     document.documentElement.dir = isRTL ? "rtl" : "ltr";
-  }, [language, isRTL]);
+  }, [language, effectiveLanguage, isRTL, isLoginRoute]);
 
   const handleToggleLanguage = () => {
     setLanguage((prev) => (prev === "he" ? "en" : "he"));
@@ -109,30 +116,42 @@ export default function App() {
                     path="/dashboard"
                     element={<Dashboard language={language} />}
                   />
-                  <Route path="/groups" element={<Groups />} />
-                  <Route path="/users" element={<Users />} />
+                  <Route
+                    path="/groups"
+                    element={<Groups language={language} />}
+                  />
+                  <Route
+                    path="/users"
+                    element={<Users language={language} />}
+                  />
                   <Route
                     path="/reports"
                     element={
                       ["super_admin", "admin"].includes(currentUser?.role) ? (
-                        <Reports />
+                        <Reports language={language} />
                       ) : (
                         <Navigate to="/dashboard" replace />
                       )
                     }
                   />
 
-                  <Route path="/audio-meetings" element={<AudioMeetings />} />
-                  <Route path="/video-meetings" element={<VideoMeetings />} />
+                  <Route
+                    path="/audio-meetings"
+                    element={<AudioMeetings language={language} />}
+                  />
+                  <Route
+                    path="/video-meetings"
+                    element={<VideoMeetings language={language} />}
+                  />
                   <Route
                     path="/blast-dial-meetings"
-                    element={<BlastdialMeetings />}
+                    element={<BlastdialMeetings language={language} />}
                   />
                   <Route
                     path="/settings"
                     element={
                       currentUser?.role === "super_admin" ? (
-                        <Settings />
+                        <Settings language={language} />
                       ) : (
                         <Navigate to="/dashboard" replace />
                       )

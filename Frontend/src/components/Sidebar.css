@@ -167,6 +167,31 @@
   align-items: flex-end;
 }
 
+[dir="rtl"] .sidebar-link[href="/audio-meetings"],
+[dir="rtl"] .sidebar-link[href="/video-meetings"],
+[dir="rtl"] .sidebar-link[href="/blast-dial-meetings"] {
+  font-size: 0;
+}
+
+[dir="rtl"] .sidebar-link[href="/audio-meetings"]::after,
+[dir="rtl"] .sidebar-link[href="/video-meetings"]::after,
+[dir="rtl"] .sidebar-link[href="/blast-dial-meetings"]::after {
+  font-size: 1.04rem;
+  line-height: 1.2;
+}
+
+[dir="rtl"] .sidebar-link[href="/audio-meetings"]::after {
+  content: "ועידות אודיו";
+}
+
+[dir="rtl"] .sidebar-link[href="/video-meetings"]::after {
+  content: "ועידות וידאו";
+}
+
+[dir="rtl"] .sidebar-link[href="/blast-dial-meetings"]::after {
+  content: "ועידות הזנקה";
+}
+
 @media (max-width: 700px) {
   .sidebar {
     width: 100vw;

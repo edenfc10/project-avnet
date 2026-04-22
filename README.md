@@ -13,17 +13,19 @@ It enables admins to manage groups, users, and virtual meeting rooms — with fi
 4. [Project Structure](#project-structure)
 5. [Getting Started](#getting-started)
 6. [Environment Variables](#environment-variables)
-7. [Roles & Permissions](#roles--permissions)
-8. [Access Level System](#access-level-system)
-9. [API Reference](#api-reference)
-10. [Database Schema](#database-schema)
-11. [Frontend Pages](#frontend-pages)
-12. [Authentication Flow](#authentication-flow)
-13. [Logging System](#logging-system)
-14. [Security](#security)
-15. [CMS Mock Data](#cms-mock-data)
-16. [Data Persistence & Backups](#data-persistence--backups)
-17. [Recent Updates (Apr 2026)](#recent-updates-apr-2026)
+7. [CI/CD](#cicd)
+8. [Production Deployment](#production-deployment)
+9. [Roles & Permissions](#roles--permissions)
+10. [Access Level System](#access-level-system)
+11. [API Reference](#api-reference)
+12. [Database Schema](#database-schema)
+13. [Frontend Pages](#frontend-pages)
+14. [Authentication Flow](#authentication-flow)
+15. [Logging System](#logging-system)
+16. [Security](#security)
+17. [CMS Integration](#cms-integration)
+18. [Data Persistence & Backups](#data-persistence--backups)
+19. [Recent Updates (Apr 2026)](#recent-updates-apr-2026)
 
 ---
 
@@ -42,14 +44,16 @@ Meet Manager solves the problem of controlling who can see what type of meeting 
 | Database         | PostgreSQL 15                                 |
 | Auth             | JWT (PyJWT, HS256, 24h expiry)                |
 | Passwords        | Argon2 (via passlib)                          |
-| Containerization | Docker + Docker Compose                       |
+| Containerization | Docker + Docker Compose + Nginx               |
 | Logging          | Custom async queue-based rotating file logger |
+| CI/CD            | GitHub Actions                                |
 
 ---
 
 ## Architecture
 
 ```
+Development
 Browser (React/Vite :5173)
   │
   │  HTTP + JWT Bearer token
@@ -59,87 +63,71 @@ FastAPI Backend (:8000)
   │  SQLAlchemy ORM sessions
   ▼
 PostgreSQL (:5432)
-   stored in ./data1 (bind mount)
+
+Production
+Browser
+  │
+  │  HTTP/HTTPS
+  ▼
+Nginx (serves frontend + reverse proxy API)
+  │
+  ├── /           -> React static build
+  └── /auth|users|groups|meetings|protected|favorites|servers -> FastAPI
+          │
+          ▼
+      FastAPI Backend (internal Docker network only)
+          │
+          ▼
+      PostgreSQL (:5432, internal Docker network)
 ```
 
-The Vite dev server defines a proxy for all `/auth`, `/users`, `/groups`, `/meetings`, `/protected` paths to forward them to `http://api:8000` inside Docker.  
-The frontend also maintains a fallback direct URL (`http://localhost:8000`) for local development outside Docker.
+In development, the Vite dev server proxies API routes to `http://api:8000` inside Docker, and the frontend can also fall back to `http://localhost:8000` outside Docker.
+
+In production, Nginx serves the built frontend and proxies backend API traffic internally, so port `8000` does not need to be exposed publicly.
 
 ---
 
 ## Project Structure
 
 ```
-eden_project/
-├── docker-compose.yml          # All services: db, api, frontend
-├── .env                        # Environment variables (not committed)
-├── data1/                      # PostgreSQL data directory (bind mount)
-├── project-avnet-main/         # Backend (FastAPI)
-│   ├── main.py                 # App entry point, lifespan, CORS, routers
-│   ├── logger.py               # Async rotating daily log system
+Meet-Control-main/
+├── docker-compose.yml              # Development stack
+├── docker-compose.prod.yml         # Production stack
+├── .env                            # Local development env (not committed)
+├── .env.prod.example               # Production env template
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                  # CI pipeline
+│       └── deploy-ubuntu.yml       # Deploy pipeline for Ubuntu via SSH
+├── Backend/
+│   ├── Dockerfile.backend          # Development backend image
+│   ├── Dockerfile.prod             # Production backend image
 │   ├── requirements.txt
+│   ├── tests/                      # Backend test suite
+│   ├── main.py                     # App entry point, lifespan, CORS, routers
+│   ├── logger.py                   # Async rotating daily log system
+│   ├── alembic/
 │   └── app/
 │       ├── core/
-│       │   └── database.py     # SQLAlchemy engine, session, Base
-│       ├── models/             # ORM models (DB table definitions)
-│       │   ├── user.py
-│       │   ├── group.py
-│       │   ├── meeting.py
-│       │   ├── member_group_access.py
-│       │   └── events.py       # SQLAlchemy event listeners (disabled)
-│       ├── schema/             # Pydantic input/output schemas
-│       │   ├── user.py
-│       │   └── meeting.py
-│       ├── routers/            # FastAPI route handlers
-│       │   ├── auth.py
-│       │   ├── user.py
-│       │   ├── group.py
-│       │   ├── meeting.py
-│       │   └── protect.py
-│       ├── service/            # Business logic layer
-│       │   ├── userService.py
-│       │   ├── groupService.py
-│       │   └── meetingService.py
-│       ├── repository/         # DB query layer
-│       │   ├── base.py
-│       │   ├── userRepo.py
-│       │   ├── groupRepo.py
-│       │   └── meetingRepo.py
+│       ├── models/
+│       ├── repository/
+│       ├── routers/
+│       ├── schema/
 │       ├── security/
-│       │   ├── auth.py         # JWT sign & decode
-│       │   ├── hashHelper.py   # Argon2 password hashing
-│       │   ├── TokenValidator.py  # FastAPI dependency for auth guards
-│       │   └── superAdminTest.py  # Auto-creates super_admin on startup
+│       ├── service/
 │       └── util/
-│           └── init_db.py      # Table creation, optional RESET_DB
-└── Meetings-App/               # Frontend (React + Vite)
-  ├── Dockerfile
-  ├── vite.config.js
-  ├── package.json
-  └── src/
-    ├── App.jsx             # Root layout, sidebar, routing
-    ├── main.jsx            # React entry point
-    ├── services/
-    │   └── api.js          # Axios instance + all API modules
-    ├── context/
-    │   └── AuthContext.jsx # Global auth state (token, role, user)
-    ├── components/
-    │   ├── ProtectedRoute.jsx
-    │   └── MeetingsPage.jsx
-    ├── mocks/
-    │   └── cmsMeetings.js  # Local mock CMS data (no backend)
-    └── pages/
-      ├── Login.jsx
-      ├── Dashboard.jsx
-      ├── Users.jsx
-      ├── Groups.jsx
-      ├── AudioMeetings.jsx
-      ├── VideoMeetings.jsx
-      ├── BlastdialMeetings.jsx
-      ├── Reports.jsx
-      ├── Profile.jsx
-      ├── Settings.jsx
-      └── Help.jsx
+├── Frontend/
+│   ├── Dockerfile                  # Development frontend image
+│   ├── Dockerfile.prod             # Production frontend image
+│   ├── nginx.conf                  # Nginx SPA + API reverse proxy
+│   ├── package.json
+│   └── src/
+│       ├── components/
+│       ├── context/
+│       ├── mocks/
+│       ├── pages/
+│       └── services/
+└── initdb/
 ```
 
 ---
@@ -165,6 +153,21 @@ docker compose up --build
 | Backend API        | http://localhost:8000      |
 | API Docs (Swagger) | http://localhost:8000/docs |
 | Database           | localhost:5432             |
+
+### Production deployment
+
+For production on an Ubuntu server, use the dedicated production stack:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Production behavior:
+
+- Frontend is built with Vite and served by Nginx.
+- Nginx reverse-proxies API requests to the backend container.
+- Backend port `8000` stays internal to the Docker network.
+- PostgreSQL data is persisted in the `data1` volume.
 
 ### Stop the project
 
@@ -216,15 +219,29 @@ RESET_DB=0
 USE_ALEMBIC=1
 ```
 
+For production, create `.env.prod` from `.env.prod.example` and keep it only on the server.
+
+Production-only frontend settings:
+
+```env
+# Leave empty to use same-origin API calls through Nginx reverse proxy
+VITE_API_URL=
+
+# CMS integration mode: mock or remote
+VITE_CMS_MODE=remote
+VITE_CMS_URL=http://CMS_LAB_SERVER:PORT
+VITE_CMS_API_KEY=
+```
+
 > **RESET_DB:** Setting this to `1` will **drop all tables and delete all data** on the next startup. Always keep it at `0` in production.
 
 > **USE_ALEMBIC:** Keep this at `1` to let Alembic manage schema changes before the API starts.
 
 ### Database migrations
 
-The backend now includes Alembic under [project-avnet-main/project-avnet-main/project-avnet-main/alembic](project-avnet-main/project-avnet-main/project-avnet-main/alembic).
+The backend includes Alembic under `Backend/alembic`.
 
-Common commands from [project-avnet-main/project-avnet-main/project-avnet-main](project-avnet-main/project-avnet-main/project-avnet-main):
+Common commands from `Backend`:
 
 ```bash
 alembic upgrade head
@@ -232,6 +249,58 @@ alembic revision -m "describe_change"
 ```
 
 When Docker starts the API service, it runs `alembic upgrade head` automatically before `uvicorn`.
+
+---
+
+## CI/CD
+
+The repository includes two GitHub Actions workflows:
+
+- `ci.yml` runs on push and pull request.
+- `deploy-ubuntu.yml` deploys the project to an Ubuntu server on push to `main` or by manual trigger.
+
+CI currently includes:
+
+- Frontend dependency install, lint, and production build.
+- Backend dependency install, Ruff linting for tests, and pytest execution.
+
+Deploy workflow behavior:
+
+- Connects to the Ubuntu server over SSH.
+- Clones or updates the repository.
+- Requires a server-side `.env.prod` file.
+- Copies `.env.prod` to `.env` for compose consumption.
+- Runs `docker compose -f docker-compose.prod.yml up -d --build`.
+
+Required GitHub Secrets:
+
+- `DEPLOY_HOST`
+- `DEPLOY_USER`
+- `DEPLOY_SSH_KEY`
+- `DEPLOY_PORT` (optional, default `22`)
+- `DEPLOY_PATH` (optional, default `/opt/meet-control`)
+
+---
+
+## Production Deployment
+
+Recommended Ubuntu server prerequisites:
+
+- Docker
+- Docker Compose plugin
+- Git
+
+Typical first-time setup:
+
+```bash
+git clone <your-repo-url> /opt/meet-control
+cd /opt/meet-control
+cp .env.prod.example .env.prod
+nano .env.prod
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+After CI/CD is configured, future deployments can be triggered by pushing to `main`.
 
 ---
 
@@ -386,6 +455,15 @@ All endpoints require a `Bearer` JWT token in the `Authorization` header, unless
 ---
 
 ## Recent Updates (Apr 2026)
+
+### Deployment and automation
+
+- Added GitHub Actions CI for frontend lint/build and backend automated test execution.
+- Added a GitHub Actions deployment workflow for Ubuntu servers over SSH.
+- Added `docker-compose.prod.yml` for the production stack.
+- Added production Dockerfiles for backend and frontend.
+- Added Nginx reverse proxying so frontend and backend can be served behind the same public entry point.
+- Backend port `8000` can now stay internal in production.
 
 ### Access and visibility changes
 
@@ -655,15 +733,30 @@ This project is open source and available under the MIT License.
 
 ---
 
-## CMS Mock Data
+## CMS Integration
 
-The frontend includes a simulated CMS data source in `src/mocks/cmsMeetings.js`.  
-This is a local JavaScript array that mimics an external CMS API with a 300ms simulated delay.
+The frontend supports two CMS integration modes through `Frontend/src/services/api.js`:
 
-It contains pre-seeded meeting objects for audio, video, and blast_dial types.  
-All `cmsAPI` calls in `api.js` read from this mock instead of the backend.
+- `mock` mode uses the local simulated CMS source in `src/mocks/cmsMeetings.js`.
+- `remote` mode sends HTTP requests directly to an external CMS server.
 
-In the future, replacing this with real HTTP calls to an external CMS system requires only updating the `cmsAPI` functions in `api.js`.
+The mock source is a local JavaScript array that mimics an external CMS API with a 300ms simulated delay.
+
+It contains pre-seeded meeting objects for audio, video, and blast_dial types.
+
+Remote mode is configured with:
+
+- `VITE_CMS_MODE`
+- `VITE_CMS_URL`
+- `VITE_CMS_API_KEY`
+
+Expected remote CMS endpoints:
+
+- `GET /meetings`
+- `GET /meetings/{meetingId}`
+- `POST /meetings`
+- `PUT /meetings/{meetingId}/password`
+- `DELETE /meetings/{meetingId}`
 
 ---
 

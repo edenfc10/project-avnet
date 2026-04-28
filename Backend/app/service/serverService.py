@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from app.models.meeting import AccessLevel
 from app.repository.severRepo import ServerRepository
 from app.schema.server import ServerInCreate, ServerInUpdate, ServerOutput
+from app.config.cms_config import CMSConfig
 
 class ServerService:
     def __init__(self, session):
@@ -29,3 +30,23 @@ class ServerService:
         if updated_server:
             return self._to_output(updated_server)
         raise HTTPException(status_code=404, detail="Server not found")
+    
+    def get_cms_servers_status(self) -> dict:
+        """בדיקת סטטוס כל שרתי ה-CMS המוגדרים"""
+        status = {}
+        for server_name in CMSConfig.get_all_cms_servers():
+            try:
+                is_connected = CMSConfig.test_connection(server_name)
+                server_config = CMSConfig.get_cms_server(server_name)
+                status[server_name] = {
+                    "connected": is_connected,
+                    "host": server_config["base_url"],
+                    "status": "online" if is_connected else "offline"
+                }
+            except Exception as e:
+                status[server_name] = {
+                    "connected": False,
+                    "host": f"Error: {str(e)}",
+                    "status": "error"
+                }
+        return status

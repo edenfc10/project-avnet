@@ -14,7 +14,7 @@
 # הרשאות: admin + super_admin בלבד (agent לקריאה בודדת)
 # ============================================================================
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from app.schema.meeting import MeetingInCreate, MeetingInUpdate, MeetingOutput, MeetingPasswordUpdate
 from app.core.database import get_db
 from sqlalchemy.orm import Session
@@ -22,9 +22,34 @@ from app.security.TokenValidator import TokenValidator
 from app.service.meetingService import MeetingService
 from app.models.meeting import AccessLevel
 from logger import LoggerManager
-from typing import Optional
+from typing import Optional, Dict
+from pydantic import BaseModel
 
 meetingRouter = APIRouter()
+
+# Pydantic models for CMS operations
+class ParticipantMuteRequest(BaseModel):
+    call_id: str
+    participant_name: str
+    mute: bool = True
+    server_name: Optional[str] = "primary"
+
+class ParticipantKickRequest(BaseModel):
+    call_id: str
+    participant_name: str
+    server_name: Optional[str] = "primary"
+
+class ParticipantLayoutRequest(BaseModel):
+    call_id: str
+    participant_name: str
+    layout: str
+    server_name: Optional[str] = "primary"
+
+class CoSpaceCreateRequest(BaseModel):
+    name: str
+    uri: Optional[str] = None
+    passcode: Optional[str] = None
+    server_name: Optional[str] = "primary"
 
 # הגדרת רמות הרשאה
 allow_super_admin_only = TokenValidator(allowed_roles=["super_admin"])
@@ -204,6 +229,177 @@ def get_meeting_by_uuid(meeting_uuid: str = Path(..., pattern=r"^[0-9a-fA-F-]{36
         LoggerManager.get_logger().exception(
             "Failed to fetch meeting UUID=%s for user %s:%s role=%s. Error: %s",
             meeting_uuid, user.s_id, user.UUID, user_role, str(error),
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# ========== CMS Call Management Endpoints ==========
+
+# --- GET /meetings/calls/active ---
+# קבלת רשימת שיחות פעילות מ-CMS
+@meetingRouter.get("/calls/active", status_code=200)
+def get_active_calls(
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s requested active calls from CMS server %s",
+            user.s_id, user.UUID, server_name
+        )
+        return MeetingService(session=session).get_active_calls(server_name=server_name)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to get active calls from CMS server %s. Error: %s",
+            server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- GET /meetings/calls/{call_id}/participants ---
+# קבלת רשימת משתתפים בשיחה ספציפית
+@meetingRouter.get("/calls/{call_id}/participants", status_code=200)
+def get_call_participants(
+    call_id: str,
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s requested participants for call %s from CMS server %s",
+            user.s_id, user.UUID, call_id, server_name
+        )
+        return MeetingService(session=session).get_call_participants(call_id=call_id, server_name=server_name)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to get participants for call %s from CMS server %s. Error: %s",
+            call_id, server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- POST /meetings/calls/participants/mute ---
+# השתקה או ביטול השתקה של משתתף
+@meetingRouter.post("/calls/participants/mute", status_code=200)
+def mute_participant(
+    request: ParticipantMuteRequest,
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s attempting to %s participant %s in call %s on CMS server %s",
+            user.s_id, user.UUID, 
+            "mute" if request.mute else "unmute",
+            request.participant_name, request.call_id, request.server_name
+        )
+        result = MeetingService(session=session).mute_participant(
+            call_id=request.call_id,
+            participant_name=request.participant_name,
+            mute=request.mute,
+            server_name=request.server_name
+        )
+        return {"success": result, "message": f"Participant {'muted' if request.mute else 'unmuted'} successfully"}
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to %s participant %s in call %s on CMS server %s. Error: %s",
+            "mute" if request.mute else "unmute",
+            request.participant_name, request.call_id, request.server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- POST /meetings/calls/participants/kick ---
+# הוצאת משתתף משיחה
+@meetingRouter.post("/calls/participants/kick", status_code=200)
+def kick_participant(
+    request: ParticipantKickRequest,
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s attempting to kick participant %s from call %s on CMS server %s",
+            user.s_id, user.UUID, request.participant_name, request.call_id, request.server_name
+        )
+        result = MeetingService(session=session).kick_participant(
+            call_id=request.call_id,
+            participant_name=request.participant_name,
+            server_name=request.server_name
+        )
+        return {"success": result, "message": "Participant kicked successfully"}
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to kick participant %s from call %s on CMS server %s. Error: %s",
+            request.participant_name, request.call_id, request.server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- GET /meetings/cms/status ---
+# בדיקת חיבור לשרת CMS
+@meetingRouter.get("/cms/status", status_code=200)
+def test_cms_connection(
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(all_members_validator)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s testing connection to CMS server %s",
+            user.s_id, user.UUID, server_name
+        )
+        result = MeetingService(session=session).test_cms_connection(server_name=server_name)
+        return {"connected": result, "server": server_name}
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to test connection to CMS server %s. Error: %s",
+            server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- POST /meetings/cospaces ---
+# יצירת CoSpace חדש ב-CMS
+@meetingRouter.post("/cospaces", status_code=200)
+def create_cospace(
+    request: CoSpaceCreateRequest,
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s creating CoSpace '%s' on CMS server %s",
+            user.s_id, user.UUID, request.name, request.server_name
+        )
+        result = MeetingService(session=session).create_cospace(
+            name=request.name,
+            uri=request.uri,
+            passcode=request.passcode,
+            server_name=request.server_name
+        )
+        return result
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to create CoSpace '%s' on CMS server %s. Error: %s",
+            request.name, request.server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- GET /meetings/cospaces ---
+# קבלת רשימת כל ה-CoSpaces ב-CMS
+@meetingRouter.get("/cospaces", status_code=200)
+def list_cospaces(
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s requested CoSpaces list from CMS server %s",
+            user.s_id, user.UUID, server_name
+        )
+        return MeetingService(session=session).list_cospaces(server_name=server_name)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to list CoSpaces from CMS server %s. Error: %s",
+            server_name, str(error)
         )
         raise HTTPException(status_code=500, detail="Internal Server Error")
 

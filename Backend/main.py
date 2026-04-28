@@ -32,6 +32,7 @@ from app.routers.meeting import meetingRouter
 from app.routers.favorite import favoriteRouter
 from app.routers.protect import protectRouter
 from app.routers.server import serverRouter
+from app.routers.CDR import CDRRouter
 from logger import LoggerManager
 from app.schema.user import UserOutput
 from app.security.auth import AuthHand
@@ -47,6 +48,7 @@ tags_metadata = [
     {"name": "groups", "description": "Group management & access control"},
     {"name": "servers", "description": "Server management endpoints"},
     {"name": "protected", "description": "Protected endpoints requiring login"},
+    {"name": "cdr", "description": "Call Detail Record endpoints"},
 ]
 
 
@@ -147,3 +149,4 @@ app.include_router(router=groupRouter, tags=["groups"], prefix="/groups")
 app.include_router(router=meetingRouter, tags=["meetings"], prefix="/meetings")
 app.include_router(router=serverRouter, tags=["servers"], prefix="/servers")
 app.include_router(router=favoriteRouter, tags=["favorites"], prefix="/favorites")
+app.include_router(router=CDRRouter, tags=["cdr"], prefix="/cdr")

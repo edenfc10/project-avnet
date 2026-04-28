@@ -9,7 +9,6 @@
 git clone https://github.com/edenfc10/Meet-Control.git
 cd Meet-Control
 cp .env.example .env
-cd Frontend && cp .env.example .env && cd ..
 
 # 2. Start everything with Docker
 docker-compose up --build
@@ -32,18 +31,18 @@ That's it! 🎉 Your meeting management platform is now running.
 4. [Project Structure](#project-structure)
 5. [Getting Started](#getting-started)
 6. [Environment Variables](#environment-variables)
-7. [CI/CD](#cicd)
-8. [Production Deployment](#production-deployment)
-9. [Roles & Permissions](#roles--permissions)
-10. [Access Level System](#access-level-system)
-11. [API Reference](#api-reference)
-12. [Database Schema](#database-schema)
-13. [Frontend Pages](#frontend-pages)
-14. [Authentication Flow](#authentication-flow)
-15. [Logging System](#logging-system)
-16. [Security](#security)
-17. [CMS Integration](#cms-integration)
-18. [Data Persistence & Backups](#data-persistence--backups)
+7. [CMS Integration](#cms-integration)
+8. [CDR Endpoints](#cdr-endpoints)
+9. [CI/CD](#cicd)
+10. [Production Deployment](#production-deployment)
+11. [Roles & Permissions](#roles--permissions)
+12. [Access Level System](#access-level-system)
+13. [API Reference](#api-reference)
+14. [Database Schema](#database-schema)
+15. [Frontend Pages](#frontend-pages)
+16. [Authentication Flow](#authentication-flow)
+17. [Logging System](#logging-system)
+18. [Security](#security)
 19. [Recent Updates (Apr 2026)](#recent-updates-apr-2026)
 
 ---
@@ -59,6 +58,8 @@ Meet Manager solves the critical problem of **who can see which virtual meetings
 - 👥 **Granular Permissions** - Control access at the individual user level
 - 📊 **Real-time Monitoring** - Track active meetings and participants
 - 🔗 **Cisco Integration** - Seamless connectivity with Cisco Meeting Server
+- 📋 **CDR Processing** - Automatic call detail record collection from CMS
+- 🎛️ **Live Call Control** - Mute/kick participants and manage layouts
 
 ### **Perfect For:**
 - **Enterprises** managing multiple departments with different meeting needs
@@ -261,45 +262,97 @@ docker compose up frontend
 
 ## Environment Variables
 
+### Development Environment (.env)
+
 Create a file named `.env` in the project root:
 
 ```env
-# Database
+# Database Configuration
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=fastapi_demo
-POSTGRES_PORT=5432
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=meet_control
 
-# JWT
-JWT_SECRET=your_very_long_random_secret
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_ALGORITHM=HS256
 
-# Super Admin (created automatically on first startup)
+# Super Admin Configuration (created automatically on first startup)
 SUPER_ADMIN_USERNAME=superadmin
 SUPER_ADMIN_PASSWORD=superadminpassword
 
-# API
-RESET_DB=0
+# Database Management
 USE_ALEMBIC=1
+
+# CMS Integration (Backend)
+CMS_PRIMARY_HOST=192.168.1.24
+CMS_PRIMARY_PORT=8443
+CMS_PRIMARY_USER=admin
+CMS_PRIMARY_PASSWORD=admin
+
+CMS_SECONDARY_HOST=192.168.1.30
+CMS_SECONDARY_PORT=8443
+CMS_SECONDARY_USER=admin
+CMS_SECONDARY_PASSWORD=admin
+
+# Development Settings
+ENV=development
+FORCE_CMS_CONNECTION=false
 ```
 
-For production, create `.env.prod` from `.env.prod.example` and keep it only on the server.
+### Production Environment (.env.prod)
 
-Production-only frontend settings:
+For production, create `.env.prod` from `.env.prod.example` and keep it only on the server:
 
 ```env
+# PostgreSQL
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=CHANGE_ME
+POSTGRES_DB=meet_control
+
+# Backend JWT
+JWT_SECRET=CHANGE_ME_TO_LONG_RANDOM_STRING
+JWT_ALGORITHM=HS256
+
+# Initial super admin
+SUPER_ADMIN_USERNAME=superadmin
+SUPER_ADMIN_PASSWORD=CHANGE_ME
+
+# Frontend build-time settings
 # Leave empty to use same-origin API calls through Nginx reverse proxy
 VITE_API_URL=
-
-# CMS integration mode: mock or remote
 VITE_CMS_MODE=remote
 VITE_CMS_URL=http://CMS_LAB_SERVER:PORT
-VITE_CMS_API_KEY=
 ```
 
-> **RESET_DB:** Setting this to `1` will **drop all tables and delete all data** on the next startup. Always keep it at `0` in production.
+### Variable Explanations
 
-> **USE_ALEMBIC:** Keep this at `1` to let Alembic manage schema changes before the API starts.
+**Database Variables:**
+- `POSTGRES_USER` - PostgreSQL username
+- `POSTGRES_PASSWORD` - PostgreSQL password  
+- `POSTGRES_DB` - Database name
+
+**Authentication Variables:**
+- `JWT_SECRET` - Secret key for JWT token signing (use strong random string in production)
+- `JWT_ALGORITHM` - JWT signing algorithm (keep HS256)
+- `SUPER_ADMIN_USERNAME/PASSWORD` - Initial admin user credentials
+
+**CMS Integration Variables:**
+- `CMS_PRIMARY_HOST/PORT/USER/PASSWORD` - Primary CMS server connection details
+- `CMS_SECONDARY_HOST/PORT/USER/PASSWORD` - Secondary CMS server (optional)
+- `ENV` - Environment mode (development/production)
+- `FORCE_CMS_CONNECTION` - Force CMS connection testing in development mode
+
+**Frontend Variables:**
+- `VITE_API_URL` - Backend API URL (leave empty for same-origin)
+- `VITE_CMS_MODE` - CMS integration mode (mock/remote)
+- `VITE_CMS_URL` - External CMS server URL for remote mode
+
+**Important Notes:**
+> **⚠️ SECURITY**: Never commit `.env` files to version control. Use `.env.example` for templates.
+> 
+> **🔧 USE_ALEMBIC**: Keep this at `1` to let Alembic manage schema changes automatically.
+> 
+> **🚨 RESET_DB**: This variable was removed - use Alembic migrations instead for safe schema changes.
 
 ### Database migrations
 
@@ -526,7 +579,47 @@ All endpoints require a `Bearer` JWT token in the `Authorization` header, unless
 
 ## Recent Updates (Apr 2026)
 
-### Deployment and automation
+### 🚀 Major New Features
+
+**Cisco Meeting Server (CMS) Integration:**
+- Complete backend CMS client implementation with HTTP API communication
+- Support for multiple CMS servers (primary/secondary configuration)
+- Real-time call management endpoints (mute, kick, layout control)
+- CoSpace management functionality
+- Environment-based configuration with development safety modes
+
+**Call Detail Record (CDR) Processing:**
+- New CDR ingestion endpoints for receiving call data from CMS
+- Public endpoints `/cdr/send_sdr` and `/cdr/cdr` for CMS server integration
+- Comprehensive logging and validation for CDR data
+- Production-ready for high-volume call record processing
+
+**Enhanced Configuration Management:**
+- Centralized CMS configuration in `app/config/cms_config.py`
+- Support for environment variables and development modes
+- Safe connection testing with automatic fallback in development
+- Updated environment variable documentation
+
+### 🔧 Technical Improvements
+
+**Backend Enhancements:**
+- Added `requests` dependency for CMS HTTP communication
+- Improved service layer architecture with CMS integration
+- Enhanced error handling and logging throughout the system
+- Updated main.py to include new CDR router
+
+**Documentation Updates:**
+- Comprehensive README updates with CMS integration guides
+- New CDR endpoint documentation with examples
+- Updated environment variables section with all new configurations
+- Improved project structure documentation
+
+### 🛠️ Development Workflow Improvements
+
+- **Local Development Setup**: Streamlined local development environment setup with proper environment variables.
+- **Container Lifecycle Management**: Improved container start/stop procedures with proper cleanup.
+- **Debugging Tools**: Enhanced debugging capabilities with comprehensive logging and status checking.
+- **Build Optimization**: Optimized Docker build process for faster development cycles.
 
 - Added GitHub Actions CI for frontend lint/build and backend automated test execution.
 - Added a GitHub Actions deployment workflow for Ubuntu servers over SSH.
@@ -848,6 +941,45 @@ This project is open source and available under the MIT License.
 
 ## CMS Integration
 
+The platform provides comprehensive integration with Cisco Meeting Server (CMS) for both frontend and backend operations.
+
+### Backend CMS Integration
+
+**Configuration** (`app/config/cms_config.py`):
+- Support for multiple CMS servers (primary/secondary)
+- Environment-based configuration for credentials
+- Development mode with safe connection testing
+
+**Available Endpoints** (`/meetings/calls/*`):
+- `GET /meetings/calls/active` - List active calls
+- `GET /meetings/calls/{call_id}/participants` - Get call participants
+- `POST /meetings/calls/participants/mute` - Mute/unmute participants
+- `POST /meetings/calls/participants/kick` - Remove participants
+- `POST /meetings/calls/participants/layout` - Set video layout
+- `GET /meetings/cospaces` - List CoSpaces
+- `POST /meetings/cospaces` - Create new CoSpace
+
+**Environment Variables**:
+```bash
+# Primary CMS Server
+CMS_PRIMARY_HOST=192.168.1.24
+CMS_PRIMARY_PORT=8443
+CMS_PRIMARY_USER=admin
+CMS_PRIMARY_PASSWORD=admin
+
+# Secondary CMS Server (optional)
+CMS_SECONDARY_HOST=192.168.1.30
+CMS_SECONDARY_PORT=8443
+CMS_SECONDARY_USER=admin
+CMS_SECONDARY_PASSWORD=admin
+
+# Development Settings
+ENV=development
+FORCE_CMS_CONNECTION=false  # Set to true to test connections in dev
+```
+
+### Frontend CMS Integration
+
 The frontend supports two CMS integration modes through `Frontend/src/services/api.js`:
 
 - `mock` mode uses the local simulated CMS source in `src/mocks/cmsMeetings.js`.
@@ -870,6 +1002,73 @@ Expected remote CMS endpoints:
 - `POST /meetings`
 - `PUT /meetings/{meetingId}/password`
 - `DELETE /meetings/{meetingId}`
+
+---
+
+## CDR Endpoints
+
+The platform provides endpoints for receiving Call Detail Records (CDRs) from Cisco Meeting Server.
+
+### Available Endpoints
+
+**POST /cdr/send_sdr** - Primary endpoint for CDR ingestion
+- **Purpose**: Receive CDR data from CMS servers
+- **Authentication**: None (public endpoint for CMS servers)
+- **Request Body**:
+```json
+{
+  "call_id": "unique-call-identifier",
+  "caller": "caller-number",
+  "callee": "callee-number", 
+  "start_time": "2026-04-28T20:15:00Z",
+  "end_time": "2026-04-28T20:25:00Z",
+  "duration": 600,
+  "call_type": "audio|video|blast_dial",
+  "status": "connected|missed|failed",
+  "meeting_uuid": "optional-meeting-uuid",
+  "server_name": "cms-server-name",
+  "additional_data": {}
+}
+```
+
+**POST /cdr/cdr** - Legacy endpoint for compatibility
+- **Purpose**: Same as /send_sdr for backward compatibility
+- **Authentication**: None
+
+### Usage Examples
+
+**CMS Server Configuration**:
+```bash
+# Example: Configure CMS to send CDRs to your backend
+curl -X POST https://your-server:8000/cdr/send_sdr \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "call-12345",
+    "caller": "0541234567",
+    "callee": "039876543",
+    "start_time": "2026-04-28T20:15:00Z",
+    "call_type": "audio",
+    "status": "connected"
+  }'
+```
+
+**Response Format**:
+```json
+{
+  "success": true,
+  "message": "CDR received successfully",
+  "call_id": "call-12345",
+  "timestamp": "2026-04-28T20:15:30.123456"
+}
+```
+
+### Features
+
+- **No Database Storage**: CDRs are logged but not persisted (configurable)
+- **Validation**: Automatic validation of CDR data structure
+- **Logging**: Comprehensive audit logging for all CDR processing
+- **Error Handling**: Graceful error responses for invalid data
+- **Production Ready**: Suitable for high-volume CDR ingestion
 
 ---
 

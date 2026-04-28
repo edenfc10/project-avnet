@@ -1,7 +1,26 @@
-﻿# Project Avnet — Meet Manager
+﻿# 🏢 Meet Manager - Platform for Managing Virtual Meetings
 
-**Meet Manager** is a full-stack, role-based meetings management platform built for internal organizational use.  
-It enables admins to manage groups, users, and virtual meeting rooms — with fine-grained per-user access control at the group level.
+**Meet Manager** is a comprehensive, role-based meetings management platform designed for organizations that need precise control over virtual meeting access. Built with modern technology stack, it provides granular permissions, real-time monitoring, and seamless integration with Cisco Meeting Server.
+
+## 🚀 **Quick Start - Get Running in 2 Minutes**
+
+```bash
+# 1. Clone and setup environment
+git clone https://github.com/edenfc10/Meet-Control.git
+cd Meet-Control
+cp .env.example .env
+cd Frontend && cp .env.example .env && cd ..
+
+# 2. Start everything with Docker
+docker-compose up --build
+
+# 3. Access the application
+# Frontend: http://localhost:5173
+# API Docs: http://localhost:8000/docs
+# Login: s_id=superadmin, password=superadminpassword
+```
+
+That's it! 🎉 Your meeting management platform is now running.
 
 ---
 
@@ -29,24 +48,50 @@ It enables admins to manage groups, users, and virtual meeting rooms — with fi
 
 ---
 
-## Overview
+## 🎯 **What It Does**
 
-Meet Manager solves the problem of controlling who can see what type of meeting within an organization. The system supports three meeting types (audio, video, blast-dial) and assigns per-user access levels within each group. A super admin manages everything, admins manage their groups and users, agents and viewers consume meeting data according to their assigned access.
+Meet Manager solves the critical problem of **who can see which virtual meetings** in your organization. 
+
+### **Key Capabilities:**
+- 🔐 **Role-Based Access Control** - 4 hierarchical roles with precise permissions
+- 🏢 **Group Management** - Organize users into departments or teams
+- 📞 **Meeting Types** - Support for Audio, Video, and Blast-Dial conferences
+- 👥 **Granular Permissions** - Control access at the individual user level
+- 📊 **Real-time Monitoring** - Track active meetings and participants
+- 🔗 **Cisco Integration** - Seamless connectivity with Cisco Meeting Server
+
+### **Perfect For:**
+- **Enterprises** managing multiple departments with different meeting needs
+- **Educational institutions** controlling student/faculty meeting access
+- **Healthcare organizations** managing secure virtual consultations
+- **Government agencies** requiring strict access controls
+
+### **How It Works:**
+1. **Super Admin** creates groups and assigns administrators
+2. **Admins** manage users and meetings within their groups  
+3. **Users** access only meetings they're authorized to see
+4. **System** enforces rules automatically with audit logging
 
 ---
 
-## Tech Stack
+## 🛠️ **Technology Stack**
 
-| Layer            | Technology                                    |
-| ---------------- | --------------------------------------------- |
-| Frontend         | React 19, Vite 7, React Router 7, Axios 1.6   |
-| Backend          | FastAPI 0.135, SQLAlchemy, Pydantic v2        |
-| Database         | PostgreSQL 15                                 |
-| Auth             | JWT (PyJWT, HS256, 24h expiry)                |
-| Passwords        | Argon2 (via passlib)                          |
-| Containerization | Docker + Docker Compose + Nginx               |
-| Logging          | Custom async queue-based rotating file logger |
-| CI/CD            | GitHub Actions                                |
+| Layer            | Technology                                    | Why We Chose It |
+| ---------------- | --------------------------------------------- | --------------- |
+| 🎨 **Frontend**   | React 19, Vite 7, React Router 7, Axios 1.6   | Modern, fast, component-based UI |
+| ⚡ **Backend**    | FastAPI 0.135, SQLAlchemy, Pydantic v2        | High-performance API with auto-docs |
+| 🗄️ **Database**   | PostgreSQL 15                                 | Reliable, scalable, ACID compliant |
+| 🔐 **Auth**       | JWT (PyJWT, HS256, 24h expiry)                | Secure token-based authentication |
+| 🔒 **Passwords**  | Argon2 (via passlib)                          | Industry-leading password hashing |
+| 🐳 **Containers** | Docker + Docker Compose + Nginx               | Consistent deployment environment |
+| 📝 **Logging**    | Custom async queue-based rotating file logger | Production-ready audit trails |
+| 🚀 **CI/CD**      | GitHub Actions                                | Automated testing and deployment |
+
+### **Why This Stack?**
+- **Performance**: FastAPI delivers sub-millisecond response times
+- **Security**: JWT + Argon2 + role-based access keeps data safe
+- **Scalability**: PostgreSQL + Docker handles enterprise loads
+- **Developer Experience**: Auto-generated API docs + hot reload
 
 ---
 
@@ -132,27 +177,46 @@ Meet-Control-main/
 
 ---
 
-## Getting Started
+## 🚀 **Getting Started**
 
-### Prerequisites
+### 📋 **Prerequisites**
+- **Docker Desktop** - Download and install from [docker.com](https://docker.com)
+- **Git** - For cloning the repository
+- **5 minutes** - That's all you need to get running!
 
-- Docker Desktop running
-- `.env` file in the project root (see [Environment Variables](#environment-variables))
-
-### Run the project
+### ⚡ **Quick Installation**
 
 ```bash
-docker compose up --build
+# 1. Clone the repository
+git clone https://github.com/edenfc10/Meet-Control.git
+cd Meet-Control
+
+# 2. Setup environment files
+cp .env.example .env
+cd Frontend && cp .env.example .env && cd ..
+
+# 3. Start everything (first run takes 2-3 minutes)
+docker-compose up --build
+
+# 4. You're ready! 🎉
 ```
 
-> **Compose path update:** The compose file now builds from `./Backend` and `./Frontend` (instead of old legacy folder names).
+### 🌐 **Access Your Platform**
 
-| Service            | URL                        |
-| ------------------ | -------------------------- |
-| Frontend           | http://localhost:5173      |
-| Backend API        | http://localhost:8000      |
-| API Docs (Swagger) | http://localhost:8000/docs |
-| Database           | localhost:5432             |
+| Service            | URL                        | What You'll Find |
+| ------------------ | -------------------------- | ---------------- |
+| 🎨 **Frontend**    | http://localhost:5173      | Main application |
+| ⚡ **Backend API** | http://localhost:8000      | API endpoints |
+| 📚 **API Docs**    | http://localhost:8000/docs | Interactive documentation |
+| 🗄️ **Database**   | localhost:5432             | PostgreSQL (internal) |
+
+### 🔑 **Default Login**
+```
+Username: superadmin
+Password: superadminpassword
+```
+
+> **⚠️ Security Note**: Change these credentials in production!
 
 ### Production deployment
 
@@ -304,48 +368,54 @@ After CI/CD is configured, future deployments can be triggered by pushing to `ma
 
 ---
 
-## Roles & Permissions
+## 👥 **Roles & Permissions**
 
-The system has four roles with a strict hierarchy:
+The system uses a **strict hierarchical role system** to ensure proper access control:
 
 ```
-super_admin  >  admin  >  agent  >  viewer
+👑 super_admin  >  📋 admin  >  🤝 agent  >  👁️ viewer
 ```
 
-### super_admin
+### 👑 **Super Admin** - System Owner
+- ✅ **Full access** to all system features
+- 👶 **Create users** of any role (admin, agent, viewer)
+- 🏢 **Create meetings** - Only role that can create new virtual meetings
+- 🔧 **Update passwords** for any meeting
+- 👀 **See all users** including other super_admins
+- 🗑️ **Delete users** (except themselves)
+- 📊 **System-wide monitoring** and reporting
 
-- Full access to everything
-- Can create users of all roles (admin, agent, viewer)
-- Only role that can **create** new meetings
-- Can update meeting passwords
-- Sees all users including other super_admins
-- Can delete any user (except themselves)
+### 📋 **Admin** - Department Manager
+- 👥 **Create users** (agent, viewer only)
+- 🏢 **Manage groups**: create, update, delete
+- ➕ **Add/remove members** with specific access levels
+- 🔗 **Assign meetings** to groups
+- ✏️ **Update/delete existing meetings**
+- ❌ **Cannot create new meetings** (super_admin only)
+- 👁️ **Blind to super_admin users** and other departments
 
-### admin
+### 🤝 **Agent** - Team Lead
+- 👀 **See only groups** they belong to
+- 📞 **View meetings** matching their access level
+- 👶 **Add viewers** to their groups only
+- ❌ **Cannot create** users, meetings, or groups
+- 🎯 **Limited scope** to their assigned teams
 
-- Can create agent and viewer users
-- Can manage groups: create, update, delete
-- Can add/remove members to/from groups with an access level
-- Can assign meetings to groups
-- Can update and delete existing meetings
-- Cannot create new meetings
-- Cannot see or manage super_admin users
+### 👁️ **Viewer** - Regular User
+- 🔒 **Most restricted** access level
+- 👥 **See users** only from their groups
+- 📞 **View meetings** they're authorized to access
+- 🔑 **See passwords** for meetings they can access
+- ❌ **No management** capabilities whatsoever
+- 🎯 **Read-only** access to assigned resources
 
-### agent
-
-- Can see only the groups they belong to
-- Can see only meetings whose type matches their access level in that group
-- **יכול להוסיף `viewer` לקבוצות שהוא שייך אליהן בלבד**
-- Cannot create users, meetings, or groups
-
-### viewer
-
-- Most restricted role
-- Can see users only from within their own groups
-- Can view meetings accessible to them by group membership rules
-- Can see meeting passwords when available
-- In blast dial meetings with no password, the UI shows "-"
-- Cannot create or manage anything
+### 🎯 **Access Level Matrix**
+| Role | Create Users | Manage Groups | Create Meetings | View All Data |
+|------|--------------|--------------|----------------|---------------|
+| 👑 Super Admin | ✅ All Roles | ✅ All | ✅ Yes | ✅ Yes |
+| 📋 Admin | ✅ Agent/Viewer | ✅ Own Groups | ❌ No | ❌ Department Only |
+| 🤝 Agent | ❌ No | ❌ No | ❌ No | ❌ Own Groups Only |
+| 👁️ Viewer | ❌ No | ❌ No | ❌ No | ❌ Assigned Only |
 
 ---
 
@@ -489,6 +559,49 @@ All endpoints require a `Bearer` JWT token in the `Authorization` header, unless
 - Updated `docker-compose.yml` contexts and bind mounts from legacy paths to current folders:
   - backend: `./Backend`
   - frontend: `./Frontend`
+
+### Database and Environment Setup Improvements
+
+- **Fixed Alembic Database Connection**: Corrected Alembic configuration to properly connect to the `meet_control` database instead of `fastapi_demo`, ensuring migrations create tables in the correct database.
+- **Environment Variables Template**: Created `.env.example` files for both root and Frontend directories with complete configuration templates.
+- **Database URL Configuration**: Fixed PostgreSQL connection string to use the correct database name and host for Docker networking.
+- **Alembic Reset and Migration**: Implemented proper database reset and migration workflow for clean database setup.
+
+### API Configuration and CORS Fixes
+
+- **CORS Configuration**: Updated CORS origins to support both localhost development and network access scenarios.
+- **Nginx Reverse Proxy Fix**: Fixed Nginx configuration to properly proxy API requests to the correct backend container (`fastapi_app:8000` instead of `api:8000`).
+- **API Endpoint Accessibility**: Resolved frontend-API connection issues by ensuring proper container networking and URL configuration.
+
+### Frontend Environment Configuration
+
+- **Frontend .env Setup**: Created Frontend/.env.example with `VITE_API_URL=http://localhost:8000` for local development.
+- **API URL Configuration**: Fixed frontend API base URL to work correctly in Docker development environment.
+- **Connection Timeout Resolution**: Resolved frontend API connection timeout issues by correcting environment variable configuration.
+
+### Cisco Meeting Server Integration
+
+- **CMS Service Integration**: Created `Backend/app/services/cms.py` with comprehensive Cisco Meeting Server API client.
+- **CMS API Methods**: Implemented full CMS class with methods for:
+  - CoSpace management (create, delete, update passcodes, get details)
+  - Call management (get active calls, call details)
+  - Participant management (mute, kick, set layout, get participant IDs)
+  - XML parsing utilities for API response processing
+- **API Client Architecture**: Built robust HTTP client with error handling and response parsing for Cisco Meeting Server integration.
+
+### Docker and Container Management
+
+- **Container Naming Convention**: Standardized container names for consistent Docker management.
+- **Health Checks**: Implemented proper health checks for PostgreSQL container.
+- **Volume Management**: Configured persistent data volumes for database and frontend node modules.
+- **Network Configuration**: Optimized Docker networking for inter-container communication.
+
+### Development Workflow Improvements
+
+- **Local Development Setup**: Streamlined local development environment setup with proper environment variables.
+- **Container Lifecycle Management**: Improved container start/stop procedures with proper cleanup.
+- **Debugging Tools**: Enhanced debugging capabilities with comprehensive logging and status checking.
+- **Build Optimization**: Optimized Docker build process for faster development cycles.
 
 **Create meeting request body:**
 

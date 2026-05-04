@@ -14,14 +14,19 @@ import os
 import time
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import configure_mappers
 from app.core.database import Base, _engine
 # ייבוא כל המודלים - חייב כדי שיהיו רשומים ב-Base.metadata לפני create_all
+# סדר יבוא חשוב: מודלים בסיסיים קודם, אחריהם מודלים עם relationships
 import app.models.user  # noqa: F401
 import app.models.group  # noqa: F401
-import app.models.meeting  # noqa: F401
-import app.models.member_group_access  # noqa: F401
-import app.models.favorite_meeting  # noqa: F401
 import app.models.server  # noqa: F401
+import app.models.favorite_meeting  # noqa: F401
+import app.models.member_group_access  # noqa: F401
+import app.models.meeting  # noqa: F401
+
+# Configure relationships after all models are imported
+configure_mappers()
 
 
 

@@ -126,57 +126,87 @@ export const serverAPI = {
   deleteServer: (serverUuid) => api.delete(`/servers/${serverUuid}`),
 };
 
-// --- CMS API: אינטגרציה עם CMS ---
-// מצבים:
-//   - mock: משתמש ב-backend mock endpoints (/cms_mock/*)
-//   - remote: מתחבר לשרת CMS חיצוני
+// --- CMS API: אינטגרציה עם Cisco Meeting Server ---
+// כעת מתחבר דרך Backend API ל-CMS אמיתי
 export const cmsAPI = {
+  // ניהול שיחות פעילות
+  getActiveCalls: (server = "primary") =>
+    api.get(`/meetings/calls/active?server_name=${server}`),
+
+  getCallParticipants: (callId, server = "primary") =>
+    api.get(`/meetings/calls/${callId}/participants?server_name=${server}`),
+
+  getCallDetails: (callId, server = "primary") =>
+    api.get(`/meetings/calls/${callId}/details?server_name=${server}`),
+
+  getParticipantIds: (callId, server = "primary") =>
+    api.get(`/meetings/calls/${callId}/participants/ids?server_name=${server}`),
+
+  muteParticipant: (data) =>
+    api.post("/meetings/calls/participants/mute", data),
+
+  kickParticipant: (data) =>
+    api.post("/meetings/calls/participants/kick", data),
+
+  // ניהול CoSpaces (חדרי ועידה)
+  getCospaces: (server = "primary") =>
+    api.get(`/meetings/cospaces?server_name=${server}`),
+
+  getCospaceDetails: (cospaceId, server = "primary") =>
+    api.get(`/meetings/cospaces/${cospaceId}?server_name=${server}`),
+
+  createCospace: (data) =>
+    api.post("/meetings/cospaces", data),
+
+  deleteCospace: (cospaceId, server = "primary") =>
+    api.delete(`/meetings/cospaces/${cospaceId}?server_name=${server}`),
+
+  updateCospacePasscode: (cospaceId, password, server = "primary") =>
+    api.put(`/meetings/cospaces/${cospaceId}/passcode`, {
+      passcode: password,
+      server_name: server,
+    }),
+
+  // פונקציות מערכת
+  testCmsConnection: (server = "primary") =>
+    api.get(`/meetings/cms/status?server_name=${server}`),
+
+  getCmsSystemInfo: (server = "primary") =>
+    api.get(`/meetings/cms/system?server_name=${server}`),
+
+  // פונקציות legacy לתאימות עם קוד קיים
   getMeetings: async (type) => {
-    if (useRemoteCms) {
-      return cmsClient.get("/meetings", {
-        params: type ? { type } : {},
-      });
-    }
-    // מצב mock - משתמש ב-backend mock endpoints
-    return api.get("/cms_mock/meetings", {
-      params: type ? { type } : {},
-    });
+    // ממיר ל-CoSpaces כדי לשמור על תאימות
+    const response = await api.get(`/meetings/cospaces?server_name=primary`);
+    return response;
   },
-  getMeetingById: async (meetingId) => {
-    if (useRemoteCms) {
-      return cmsClient.get(`/meetings/${meetingId}`);
-    }
-    // מצב mock - משתמש ב-backend mock endpoints
-    return api.get(`/cms_mock/meetings/${meetingId}`);
+
+  getMeeting: async (meetingId) => {
+    // ממיר ל-CoSpace details כדי לשמור על תאימות
+    return api.get(`/meetings/cospaces/${meetingId}?server_name=primary`);
   },
+
   createMeeting: async (meetingData) => {
-    if (useRemoteCms) {
-      return cmsClient.post("/meetings", meetingData);
-    }
-    // מצב mock - משתמש ב-backend mock endpoints
-    return api.post("/cms_mock/meetings", meetingData);
+    // ממיר ל-CoSpace creation כדי לשמור על תאימות
+    return api.post("/meetings/cospaces", {
+      name: meetingData.name,
+      uri: meetingData.uri,
+      passcode: meetingData.password,
+      server_name: "primary",
+    });
   },
+
   updateMeetingPassword: async (meetingId, newPassword) => {
-    if (useRemoteCms) {
-      return cmsClient.put(`/meetings/${meetingId}/password`, {
-        password: newPassword,
-      });
-    }
-    // מצב mock - משתמש ב-backend mock endpoints
-    return api.put(`/cms_mock/meetings/${meetingId}/password`, {
-      password: newPassword,
+    // ממיר ל-CoSpace passcode update כדי לשמור על תאימות
+    return api.put(`/meetings/cospaces/${meetingId}/passcode`, {
+      passcode: newPassword,
+      server_name: "primary",
     });
   },
+
   deleteMeeting: async (meetingId, actor) => {
-    if (useRemoteCms) {
-      return cmsClient.delete(`/meetings/${meetingId}`, {
-        data: { actor },
-      });
-    }
-    // מצב mock - משתמש ב-backend mock endpoints
-    return api.delete(`/cms_mock/meetings/${meetingId}`, {
-      data: { actor },
-    });
+    // ממיר ל-CoSpace deletion כדי לשמור על תאימות
+    return api.delete(`/meetings/cospaces/${meetingId}?server_name=primary`);
   },
 };
 

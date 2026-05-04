@@ -33,10 +33,7 @@ class Group(Base):
     # ×—×‘×¨×™ ×”×ž×“×•×¨ - ×¨×©×™×ž×ª ×”×ž×©×ª×ž×©×™× ×©×©×™×™×›×™× ×œ×ž×“×•×¨
 
     # פגישות המדור - רשימת הפגישות ששייכות למדור
-    meetings = relationship(
-        "Meeting", secondary="meeting_group_association", back_populates="groups"
-    )
-    # ×¨×ž×•×ª ×’×™×©×” - ×ž×’×“×™×¨ ××™×–×• ×¨×ž×ª ×’×™×©×” ×œ×›×œ ×—×‘×¨ ×‘×ž×“×•×¨
-    member_access_levels = relationship(
-        "MemberGroupAccess", back_populates="group", cascade="all, delete-orphan"
-    )
+    # Note: Disabled to avoid circular import issues
+    # meetings = relationship("Meeting", secondary="meeting_group_association", back_populates="groups")
+    # רמות גישה - מגדיר איזו רמת גישה לכל חבר במדור
+    # member_access_levels = relationship("MemberGroupAccess", back_populates="group", cascade="all, delete-orphan")

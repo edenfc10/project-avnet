@@ -47,9 +47,10 @@ class User(Base):
     # תפקיד המשתמש - ברירת מחדל: agent
     role = Column(SqlEnum(UserRole), nullable=False, default=UserRole.agent)
 
-    # --- Relationships (×§×©×¨×™×) ---
+    # --- Relationships (קשרים) ---
     # Use group_access_levels for user-group relationships with access level
     # רמות הגישה של המשתמש לכל מדור (audio/video/blast_dial/voice)
+    # Note: Disabled back_populates to avoid circular import issues
     group_access_levels = relationship(
-        "MemberGroupAccess", back_populates="member", cascade="all, delete-orphan"
+        "MemberGroupAccess", cascade="all, delete-orphan"
     )

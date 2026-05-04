@@ -33,7 +33,7 @@ from app.routers.favorite import favoriteRouter
 from app.routers.protect import protectRouter
 from app.routers.server import serverRouter
 from app.routers.CDR import CDRRouter
-from app.routers.cms_mock import cmsMockRouter
+# from app.routers.cms_mock import cmsMockRouter  # הוחלף ב-CMS אמיתי
 from logger import LoggerManager
 from app.schema.user import UserOutput
 from app.security.auth import AuthHand
@@ -152,4 +152,4 @@ app.include_router(router=meetingRouter, tags=["meetings"], prefix="/meetings")
 app.include_router(router=serverRouter, tags=["servers"], prefix="/servers")
 app.include_router(router=favoriteRouter, tags=["favorites"], prefix="/favorites")
 app.include_router(router=CDRRouter, tags=["cdr"], prefix="/cdr")
-app.include_router(router=cmsMockRouter, tags=["cms_mock"], prefix="/cms_mock")
+# app.include_router(router=cmsMockRouter, tags=["cms_mock"], prefix="/cms_mock")  # הוחלף ב-CMS אמיתי

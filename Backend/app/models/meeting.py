@@ -51,8 +51,7 @@ class Meeting(Base):
     # ×¡×™×¡×ž×ª ×”×•×•×¢×™×“×” (××•×¤×¦×™×•× ×œ×™) - × ×©×ž×¨×ª ×‘DB ×œ×¦×¤×™×™×” ×ž×©×•×ª×¤×ª
     password = Column(String(120), nullable=True)
 
-    # --- Relationships (×§×©×¨×™×) ---
-    # ×¨×©×™×ž×ª ×”×ž×“×•×¨×™× ×©×”×¤×’×™×©×” ×©×™×™×›×ª ××œ×™×”×
-    groups = relationship("Group", secondary="meeting_group_association", back_populates="meetings")
-
-
+    # --- Relationships (קשרים) ---
+    # רשימת המדורים שהפגישה שייכת אליהם
+    # Note: Disabled to avoid circular import issues
+    # groups = relationship("Group", secondary="meeting_group_association", back_populates="meetings")

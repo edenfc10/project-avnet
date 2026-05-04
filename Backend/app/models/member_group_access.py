@@ -54,10 +54,7 @@ class MemberGroupAccess(Base):
     # רמת הגישה שמוגדרת למשתמש הזה במדור הזה
     access_level = Column(SqlEnum(MemberGroupAccessLevel), primary_key=True)
 
-    # --- Relationships (×§×©×¨×™×) ---
-    member = relationship(
-        "User", back_populates="group_access_levels"
-    )  # חזרה למשתמש
-    group = relationship(
-        "Group", back_populates="member_access_levels"
-    )  # חזרה למדור
+    # --- Relationships (קשרים) ---
+    # Note: Disabled to avoid circular import issues
+    # member = relationship("User", back_populates="group_access_levels")
+    # group = relationship("Group", back_populates="member_access_levels")

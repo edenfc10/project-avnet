@@ -7,13 +7,13 @@
 #   - המרה לפורמט פלט: _to_output ממיר ORM ל-Pydantic
 # ============================================================================
 
-from typing import Dict
+from typing import Dict, List
 
 from sqlalchemy import String
 
 from app.models.user import User
 from app.service.cms import CMS
-from app.config.cms_config import CMSConfig
+from app.service.serverService import ServerService
 from app.repository.groupRepo import GroupRepository
 from app.repository.meetingRepo import MeetingRepository
 from app.schema.user import GroupInCreate, GroupOutput, UserInCreateNoRole , UserOutput, UserInCreate, UserInLogin, UserWithToken
@@ -35,17 +35,29 @@ class MeetingService:
         self.__meetingRepository = MeetingRepository(session=session)  # מופע הרפוזיטורי
         self.session = session
         self._cms_clients = {}  # cache של לקוחות CMS
+        self._server_service = ServerService(session=session)  # שירות שרתים
     
-    def _get_cms_client(self, server_name: str = "primary") -> CMS:
-        """קבלת לקוח CMS עם caching"""
-        if server_name not in self._cms_clients:
-            server_config = CMSConfig.get_cms_server(server_name)
-            self._cms_clients[server_name] = CMS(
-                base_url=server_config["base_url"],
-                username=server_config["username"],
-                password=server_config["password"]
-            )
-        return self._cms_clients[server_name]
+    def _get_cms_client(self, server_name: str = "primary", access_level: AccessLevel = None) -> CMS:
+        """קבלת לקוח CMS דינמי מה-DB"""
+        # נסה לקבל לקוח מה-cache
+        cache_key = f"{server_name}_{access_level}" if access_level else server_name
+        if cache_key in self._cms_clients:
+            return self._cms_clients[cache_key]
+        
+        # קבלת לקוח חדש מהשירות
+        cms_client = self._server_service.get_cms_client_for_server(
+            server_uuid=server_name if server_name != "primary" else None,
+            access_level=access_level
+        )
+        
+        if cms_client:
+            self._cms_clients[cache_key] = cms_client
+            return cms_client
+        
+        raise HTTPException(
+            status_code=503, 
+            detail=f"לא נמצא שרת CMS זמין: {server_name}"
+        )
 
     def _to_output(self, meeting) -> MeetingOutput:
         """ממיר ORM object של פגישה ל-Pydantic MeetingOutput. ממיר את רשימת הקבוצות ל-UUIDs בלבד."""
@@ -213,4 +225,44 @@ class MeetingService:
             return cms.list_cospaces()
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to list CoSpaces: {str(e)}")
+    
+    def delete_cospace(self, cospace_id: str, server_name: str = "primary") -> bool:
+        """מחיקת CoSpace מ-CMS"""
+        try:
+            cms = self._get_cms_client(server_name)
+            return cms.delete_cospace(cospace_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to delete CoSpace: {str(e)}")
+    
+    def update_cospace_passcode(self, cospace_id: str, passcode: str, server_name: str = "primary") -> Dict:
+        """עדכון סיסמת CoSpace ב-CMS"""
+        try:
+            cms = self._get_cms_client(server_name)
+            return cms.update_cospace_passcode(cospace_id, passcode)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to update CoSpace passcode: {str(e)}")
+    
+    def get_cospace_details(self, cospace_id: str, server_name: str = "primary") -> Dict:
+        """קבלת פרטי CoSpace ספציפי מ-CMS"""
+        try:
+            cms = self._get_cms_client(server_name)
+            return cms.get_cospace_details(cospace_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get CoSpace details: {str(e)}")
+    
+    def get_call_details(self, call_id: str, server_name: str = "primary") -> Dict:
+        """קבלת פרטי שיחה ספציפית מ-CMS"""
+        try:
+            cms = self._get_cms_client(server_name)
+            return cms.get_call_details(call_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get call details: {str(e)}")
+    
+    def get_participant_ids(self, call_id: str, server_name: str = "primary") -> List[str]:
+        """קבלת רשימת מזהי משתתפים בשיחה"""
+        try:
+            cms = self._get_cms_client(server_name)
+            return cms.get_participant_ids(call_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get participant IDs: {str(e)}")
     

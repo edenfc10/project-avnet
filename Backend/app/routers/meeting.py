@@ -51,6 +51,10 @@ class CoSpaceCreateRequest(BaseModel):
     passcode: Optional[str] = None
     server_name: Optional[str] = "primary"
 
+class PasscodeUpdateRequest(BaseModel):
+    passcode: str
+    server_name: Optional[str] = "primary"
+
 # הגדרת רמות הרשאה
 allow_super_admin_only = TokenValidator(allowed_roles=["super_admin"])
 allow_admins_only = TokenValidator(allowed_roles=["admin", "super_admin"])
@@ -400,6 +404,122 @@ def list_cospaces(
         LoggerManager.get_logger().exception(
             "Failed to list CoSpaces from CMS server %s. Error: %s",
             server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- GET /meetings/cospaces/{cospace_id} ---
+# קבלת פרטי CoSpace ספציפי מ-CMS
+@meetingRouter.get("/cospaces/{cospace_id}", status_code=200)
+def get_cospace_details(
+    cospace_id: str,
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s requested CoSpace details for %s from CMS server %s",
+            user.s_id, user.UUID, cospace_id, server_name
+        )
+        return MeetingService(session=session).get_cospace_details(cospace_id=cospace_id, server_name=server_name)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to get CoSpace details %s from CMS server %s. Error: %s",
+            cospace_id, server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- DELETE /meetings/cospaces/{cospace_id} ---
+# מחיקת CoSpace מ-CMS
+@meetingRouter.delete("/cospaces/{cospace_id}", status_code=200)
+def delete_cospace(
+    cospace_id: str,
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s deleting CoSpace %s from CMS server %s",
+            user.s_id, user.UUID, cospace_id, server_name
+        )
+        result = MeetingService(session=session).delete_cospace(cospace_id=cospace_id, server_name=server_name)
+        return {"deleted": result, "cospace_id": cospace_id}
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to delete CoSpace %s from CMS server %s. Error: %s",
+            cospace_id, server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- PUT /meetings/cospaces/{cospace_id}/passcode ---
+# עדכון סיסמת CoSpace ב-CMS
+@meetingRouter.put("/cospaces/{cospace_id}/passcode", status_code=200)
+def update_cospace_passcode(
+    cospace_id: str,
+    request: PasscodeUpdateRequest,
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s updating passcode for CoSpace %s from CMS server %s",
+            user.s_id, user.UUID, cospace_id, server_name
+        )
+        return MeetingService(session=session).update_cospace_passcode(
+            cospace_id=cospace_id, 
+            passcode=request.passcode, 
+            server_name=server_name
+        )
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to update passcode for CoSpace %s from CMS server %s. Error: %s",
+            cospace_id, server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- GET /meetings/calls/{call_id}/details ---
+# קבלת פרטי שיחה ספציפית מ-CMS
+@meetingRouter.get("/calls/{call_id}/details", status_code=200)
+def get_call_details(
+    call_id: str,
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s requested call details for %s from CMS server %s",
+            user.s_id, user.UUID, call_id, server_name
+        )
+        return MeetingService(session=session).get_call_details(call_id=call_id, server_name=server_name)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to get call details %s from CMS server %s. Error: %s",
+            call_id, server_name, str(error)
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# --- GET /meetings/calls/{call_id}/participants/ids ---
+# קבלת רשימת מזהי משתתפים בשיחה
+@meetingRouter.get("/calls/{call_id}/participants/ids", status_code=200)
+def get_participant_ids(
+    call_id: str,
+    server_name: str = Query(default="primary", description="CMS server name"),
+    session: Session = Depends(get_db), 
+    user=Depends(allow_admins_only)
+):
+    try:
+        LoggerManager.get_logger().info(
+            "User %s:%s requested participant IDs for call %s from CMS server %s",
+            user.s_id, user.UUID, call_id, server_name
+        )
+        return MeetingService(session=session).get_participant_ids(call_id=call_id, server_name=server_name)
+    except Exception as error:
+        LoggerManager.get_logger().exception(
+            "Failed to get participant IDs for call %s from CMS server %s. Error: %s",
+            call_id, server_name, str(error)
         )
         raise HTTPException(status_code=500, detail="Internal Server Error")
 

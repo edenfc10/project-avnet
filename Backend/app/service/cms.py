@@ -2,35 +2,63 @@ import requests
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Any
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+# Default CMS Configuration for Ubuntu Server
+DEFAULT_CMS_CONFIG = {
+    "base_url": "https://192.168.1.24:445",
+    "username": "admin",
+    "password": "S@p180tech",  # Default CMS admin password
+    "timeout": 30,
+    "verify_ssl": False
+}
 
 class CMS:
     """Cisco Meeting Server API Client"""
     
-    def __init__(self, base_url: str, username: str, password: str):
+    def __init__(self, base_url: str = None, username: str = None, password: str = None):
         """
         Initialize CMS client
         
         Args:
             base_url: Base URL for CMS API (e.g., "https://cms.example.com:8443")
-            username: CMS admin username
-            password: CMS admin password
+                     If None, uses default from environment or DEFAULT_CMS_CONFIG
+            username: CMS admin username. If None, uses default
+            password: CMS admin password. If None, uses default
         """
-        self.base_url = base_url.rstrip('/')
-        self.username = username
-        self.password = password
+        # Use environment variables or defaults if not provided
+        self.base_url = (base_url or 
+                         os.getenv('CMS_URL', '') or 
+                         DEFAULT_CMS_CONFIG["base_url"]).rstrip('/')
+        
+        self.username = (username or 
+                        os.getenv('CMS_USERNAME', '') or 
+                        DEFAULT_CMS_CONFIG["username"])
+        
+        self.password = (password or 
+                        os.getenv('CMS_PASSWORD', '') or 
+                        DEFAULT_CMS_CONFIG["password"])
+        
+        self.timeout = int(os.getenv('CMS_TIMEOUT', str(DEFAULT_CMS_CONFIG["timeout"])))
+        self.verify_ssl = os.getenv('CMS_VERIFY_SSL', str(DEFAULT_CMS_CONFIG["verify_ssl"])).lower() == 'true'
+        
         self.session = requests.Session()
-        self.session.auth = (username, password)
-        self.session.verify = False  # For self-signed certs
-        requests.packages.urllib3.disable_warnings()
+        self.session.auth = (self.username, self.password)
+        self.session.verify = self.verify_ssl
+        
+        if not self.verify_ssl:
+            requests.packages.urllib3.disable_warnings()
+        
+        logger.info(f"CMS Client initialized for {self.base_url}")
     
     # HTTP Methods
     def cms_get(self, endpoint: str) -> requests.Response:
         """Make GET request to CMS API"""
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         try:
-            response = self.session.get(url, timeout=30)
+            response = self.session.get(url, timeout=self.timeout)
             logger.info(f"GET {url} - Status: {response.status_code}")
             return response
         except requests.exceptions.RequestException as e:
@@ -44,10 +72,10 @@ class CMS:
         
         if xml:
             headers['Content-Type'] = 'application/xml'
-            response = self.session.post(url, data=xml.encode('utf-8'), headers=headers, timeout=30)
+            response = self.session.post(url, data=xml.encode('utf-8'), headers=headers, timeout=self.timeout)
         else:
             headers['Content-Type'] = 'application/json'
-            response = self.session.post(url, json=data, headers=headers, timeout=30)
+            response = self.session.post(url, json=data, headers=headers, timeout=self.timeout)
         
         logger.info(f"POST {url} - Status: {response.status_code}")
         return response
@@ -59,10 +87,10 @@ class CMS:
         
         if xml:
             headers['Content-Type'] = 'application/xml'
-            response = self.session.put(url, data=xml.encode('utf-8'), headers=headers, timeout=30)
+            response = self.session.put(url, data=xml.encode('utf-8'), headers=headers, timeout=self.timeout)
         else:
             headers['Content-Type'] = 'application/json'
-            response = self.session.put(url, json=data, headers=headers, timeout=30)
+            response = self.session.put(url, json=data, headers=headers, timeout=self.timeout)
         
         logger.info(f"PUT {url} - Status: {response.status_code}")
         return response
@@ -71,7 +99,7 @@ class CMS:
         """Make DELETE request to CMS API"""
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         try:
-            response = self.session.delete(url, timeout=30)
+            response = self.session.delete(url, timeout=self.timeout)
             logger.info(f"DELETE {url} - Status: {response.status_code}")
             return response
         except requests.exceptions.RequestException as e:
@@ -269,3 +297,27 @@ class CMS:
             return self._parse_xml_response(response.text)
         else:
             raise Exception(f"Failed to get system info: {response.status_code} - {response.text}")
+    
+    @classmethod
+    def create_default(cls) -> 'CMS':
+        """Create CMS client with default configuration"""
+        return cls()
+    
+    @classmethod
+    def create_from_env(cls) -> 'CMS':
+        """Create CMS client from environment variables"""
+        return cls(
+            base_url=os.getenv('CMS_URL'),
+            username=os.getenv('CMS_USERNAME'),
+            password=os.getenv('CMS_PASSWORD')
+        )
+    
+    def get_config_summary(self) -> Dict:
+        """Get current configuration summary"""
+        return {
+            "base_url": self.base_url,
+            "username": self.username,
+            "timeout": self.timeout,
+            "verify_ssl": self.verify_ssl,
+            "connected": self.test_connection()
+        }

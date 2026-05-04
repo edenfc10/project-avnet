@@ -33,6 +33,7 @@ from app.routers.favorite import favoriteRouter
 from app.routers.protect import protectRouter
 from app.routers.server import serverRouter
 from app.routers.CDR import CDRRouter
+from app.routers.cms_mock import cmsMockRouter
 from logger import LoggerManager
 from app.schema.user import UserOutput
 from app.security.auth import AuthHand
@@ -130,6 +131,7 @@ async def request_audit_log(request: Request, call_next):
 origins = [
     "http://localhost:5173",  # Frontend של Vite - פורט ברירת מחדל
     "http://127.0.0.1:5173",
+    "http://192.168.1.30:5173",  # כתובת IP מקומית
 ]
 
 # הגדרת CORS - מאפשר ל-Frontend לתקשר עם ה-API
@@ -150,3 +152,4 @@ app.include_router(router=meetingRouter, tags=["meetings"], prefix="/meetings")
 app.include_router(router=serverRouter, tags=["servers"], prefix="/servers")
 app.include_router(router=favoriteRouter, tags=["favorites"], prefix="/favorites")
 app.include_router(router=CDRRouter, tags=["cdr"], prefix="/cdr")
+app.include_router(router=cmsMockRouter, tags=["cms_mock"], prefix="/cms_mock")

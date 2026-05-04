@@ -15,13 +15,6 @@
 // ============================================================================
 
 import axios from "axios";
-import {
-  getMockCmsMeetings,
-  getMockCmsMeetingById,
-  createMockCmsMeeting,
-  updateMockCmsMeetingPassword,
-  deleteMockCmsMeeting,
-} from "../mocks/cmsMeetings";
 
 // כתובת הבסיס של ה-API - undefined יחזור ל-localhost, מחרוזת ריקה תשתמש ב-same-origin
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -133,7 +126,10 @@ export const serverAPI = {
   deleteServer: (serverUuid) => api.delete(`/servers/${serverUuid}`),
 };
 
-// --- CMS API: אינטגרציה עם CMS (כרגע mock מקומי, בעתיד יחליף ל-API אמיתי) ---
+// --- CMS API: אינטגרציה עם CMS ---
+// מצבים:
+//   - mock: משתמש ב-backend mock endpoints (/cms_mock/*)
+//   - remote: מתחבר לשרת CMS חיצוני
 export const cmsAPI = {
   getMeetings: async (type) => {
     if (useRemoteCms) {
@@ -141,22 +137,24 @@ export const cmsAPI = {
         params: type ? { type } : {},
       });
     }
-    const meetings = await getMockCmsMeetings(type);
-    return { data: meetings };
+    // מצב mock - משתמש ב-backend mock endpoints
+    return api.get("/cms_mock/meetings", {
+      params: type ? { type } : {},
+    });
   },
   getMeetingById: async (meetingId) => {
     if (useRemoteCms) {
       return cmsClient.get(`/meetings/${meetingId}`);
     }
-    const meeting = await getMockCmsMeetingById(meetingId);
-    return { data: meeting };
+    // מצב mock - משתמש ב-backend mock endpoints
+    return api.get(`/cms_mock/meetings/${meetingId}`);
   },
   createMeeting: async (meetingData) => {
     if (useRemoteCms) {
       return cmsClient.post("/meetings", meetingData);
     }
-    const meeting = await createMockCmsMeeting(meetingData);
-    return { data: meeting };
+    // מצב mock - משתמש ב-backend mock endpoints
+    return api.post("/cms_mock/meetings", meetingData);
   },
   updateMeetingPassword: async (meetingId, newPassword) => {
     if (useRemoteCms) {
@@ -164,8 +162,10 @@ export const cmsAPI = {
         password: newPassword,
       });
     }
-    const meeting = await updateMockCmsMeetingPassword(meetingId, newPassword);
-    return { data: meeting };
+    // מצב mock - משתמש ב-backend mock endpoints
+    return api.put(`/cms_mock/meetings/${meetingId}/password`, {
+      password: newPassword,
+    });
   },
   deleteMeeting: async (meetingId, actor) => {
     if (useRemoteCms) {
@@ -173,8 +173,10 @@ export const cmsAPI = {
         data: { actor },
       });
     }
-    const result = await deleteMockCmsMeeting(meetingId, actor);
-    return { data: result };
+    // מצב mock - משתמש ב-backend mock endpoints
+    return api.delete(`/cms_mock/meetings/${meetingId}`, {
+      data: { actor },
+    });
   },
 };
 
